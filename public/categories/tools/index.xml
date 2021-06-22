@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>tools on 丸子有记</title>
+    <link>https://wnote.com/categories/tools/</link>
+    <description>Recent content in tools on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Tue, 10 Mar 2020 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/tools/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hugo&#43;Github搭建个人博客</title>
+      <link>https://wnote.com/post/tools-hugo-github-blog/</link>
+      <pubDate>Tue, 10 Mar 2020 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-hugo-github-blog/</guid>
+      <description>Hugo介绍 之前博客一直使用hexo搭建,随着用golang越来越多，一直想把博客也迁移到hugo,hugo就不用多说了go语言编写的静态网</description>
+    </item>
+    
+    <item>
+      <title>Mac系统配置炫酷终端(oh my zsh)</title>
+      <link>https://wnote.com/post/tools-zsh-cool-install/</link>
+      <pubDate>Sat, 10 Nov 2018 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-zsh-cool-install/</guid>
+      <description>brew工具 官网:https://brew.sh 安装brew /usr/bin/ruby -e &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;quot; 修改brew源为国内源 git -C &amp;quot;$(brew --repo)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git git -C &amp;quot;$(brew --repo homebrew/core)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git git -C &amp;quot;$(brew --repo homebrew/cask)&amp;quot; remote set-url</description>
+    </item>
+    
+    <item>
+      <title>使用OpenSSL签发证书</title>
+      <link>https://wnote.com/post/linux-openssl-issue-private-certificate/</link>
+      <pubDate>Fri, 25 May 2018 13:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-openssl-issue-private-certificate/</guid>
+      <description>生成客户端私钥: openssl genrsa -out server.key 2048 生成客户端证书： openssl req -new -sha256 -x509 -days 3650 -key server.key -out server.crt 证书申请文件： openssl req -new -key server.key -out server.csr 生成CA私钥 采用des3加密，需要输入4位以上密</description>
+    </item>
+    
+  </channel>
+</rss>

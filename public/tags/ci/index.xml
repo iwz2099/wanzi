@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ci on 丸子有记</title>
+    <link>https://wnote.com/tags/ci/</link>
+    <description>Recent content in ci on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Mon, 11 Nov 2019 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/tags/ci/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>基于Docker-compose搭建jenkins</title>
+      <link>https://wnote.com/post/cicd-jenkins-install/</link>
+      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
+      <description>docker-compose配置 version: &#39;2&#39; services: jenkins: image: jenkins/jenkins:latest restart: always environment: JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot; ports: - &amp;quot;80:8080&amp;quot; - &amp;quot;50000:50000&amp;quot; volumes: - &#39;/ssd/jenkins:/var/jenkins_home&#39; - &#39;/var/run/docker.sock:/var/run/docker.sock&#39; - &#39;/etc/localtime:/etc/localtime:ro&#39; dns: 223.5.5.5 networks: - extnetwork networks: extnetwork: ipam: config: - subnet: 172.255.0.0/16 启动服务 docker-compose up -d</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>cicd on 丸子有记</title>
+    <link>https://wnote.com/categories/cicd/</link>
+    <description>Recent content in cicd on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/cicd/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Argo Worflow实践一安装部署</title>
+      <link>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</link>
+      <pubDate>Fri, 07 May 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</guid>
+      <description>简介&amp;amp;架构 Argo Workflows是一个开源容器级别工作流引擎，用于在Kubernetes上协调并行作业。 Argo Workflows通过抽象K</description>
+    </item>
+    
+    <item>
+      <title>Gitlab runner配置ceph s3</title>
+      <link>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</link>
+      <pubDate>Fri, 26 Mar 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</guid>
+      <description>对于前端项目Npm构建的时候，经常拉取前端库耗时比较长，另外不同的job之间复用也是一个问题，无论是artifacts或者cache最终我们</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD配合Jenkins Pipeline自动化部署应用</title>
+      <link>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</link>
+      <pubDate>Wed, 29 Jul 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</guid>
+      <description>创建helm仓库 首先，创建基础Helm模版仓库： helm create template . 对于实际的部署中，需要根据自己的业务定制自己的helm模版，我这里直接使用我们内部自</description>
+    </item>
+    
+    <item>
+      <title>argocd部署deployment出现: no space left on device</title>
+      <link>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</link>
+      <pubDate>Mon, 18 May 2020 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</guid>
+      <description>故障现象 上午通过argocd部署几个业务应用，部署了2个以后，第三方死活部署不成功，相同的配置，知识集群不一样，怎么会出现这样的问题呢？ 于是</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD添加多集群</title>
+      <link>https://wnote.com/post/cicd-argocd-add-clusters/</link>
+      <pubDate>Tue, 05 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-add-clusters/</guid>
+      <description>生成argocd管理用户token 登陆dashboard，settings&amp;ndash;&amp;gt;Accounts&amp;ndash;&amp;gt;adm</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD安部部署</title>
+      <link>https://wnote.com/post/cicd-argocd-install-in-k8s/</link>
+      <pubDate>Fri, 01 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-install-in-k8s/</guid>
+      <description>安装部署 ArgoCD的部署非常简单，安装官方的部署方法(HA模式： kubectl create namespace argocd kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v1.5.2/manifests/ha/install.yaml 可以按照需求调整部署文件，待pod顺利启动后 # kubectl -n argocd get</description>
+    </item>
+    
+    <item>
+      <title>基于K8S部署gitlab-runner</title>
+      <link>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</link>
+      <pubDate>Thu, 14 Nov 2019 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</guid>
+      <description>部署gitlab-runner 这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitl</description>
+    </item>
+    
+    <item>
+      <title>基于Docker-compose搭建jenkins</title>
+      <link>https://wnote.com/post/cicd-jenkins-install/</link>
+      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
+      <description>docker-compose配置 version: &#39;2&#39; services: jenkins: image: jenkins/jenkins:latest restart: always environment: JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot; ports: - &amp;quot;80:8080&amp;quot; - &amp;quot;50000:50000&amp;quot; volumes: - &#39;/ssd/jenkins:/var/jenkins_home&#39; - &#39;/var/run/docker.sock:/var/run/docker.sock&#39; - &#39;/etc/localtime:/etc/localtime:ro&#39; dns: 223.5.5.5 networks: - extnetwork networks: extnetwork: ipam: config: - subnet: 172.255.0.0/16 启动服务 docker-compose up -d</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>kubernetes on 丸子有记</title>
+    <link>https://wnote.com/categories/kubernetes/</link>
+    <description>Recent content in kubernetes on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Tue, 31 Dec 2019 10:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kubernetes集群添加用户</title>
+      <link>https://wnote.com/post/kubernetes-add-user/</link>
+      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-add-user/</guid>
+      <description>之前通过ansible搭建了kubernetes集群环境,这里需求主要是添加一个用户进行日常管理，并限制到指定的namespace，接下来进</description>
+    </item>
+    
+    <item>
+      <title>kubernetes集群部署traefik2.1</title>
+      <link>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</link>
+      <pubDate>Tue, 17 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</guid>
+      <description>架构&amp;amp;概念 Traefik2.x版本相比1.7.x架构有很大变化，正如上边这张架构图，最主要的功能是支持了TCP协议、增加了Route</description>
+    </item>
+    
+    <item>
+      <title>kubeasz部署k8s集群</title>
+      <link>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</link>
+      <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</guid>
+      <description>环境准备 Master节点 172.16.244.14 172.16.244.16 172.16.244.18 Node节点 172.16.244.25 172.16.244.27 Master节点VIP地址: 172.16.243.13 部署工具:Ansible/kubeasz 初始化环境 安装Ansib</description>
+    </item>
+    
+  </channel>
+</rss>

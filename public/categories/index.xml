@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on 丸子有记</title>
+    <link>https://wnote.com/categories/</link>
+    <description>Recent content in Categories on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>cicd</title>
+      <link>https://wnote.com/categories/cicd/</link>
+      <pubDate>Fri, 07 May 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/cicd/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>devops</title>
+      <link>https://wnote.com/categories/devops/</link>
+      <pubDate>Fri, 26 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/devops/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>tools</title>
+      <link>https://wnote.com/categories/tools/</link>
+      <pubDate>Tue, 10 Mar 2020 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/tools/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>kubernetes</title>
+      <link>https://wnote.com/categories/kubernetes/</link>
+      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/kubernetes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>linux</title>
+      <link>https://wnote.com/categories/linux/</link>
+      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>python</title>
+      <link>https://wnote.com/categories/python/</link>
+      <pubDate>Sat, 20 Jan 2018 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/python/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

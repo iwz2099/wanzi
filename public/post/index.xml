@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on 丸子有记</title>
+    <link>https://wnote.com/post/</link>
+    <description>Recent content in Posts on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Argo Worflow实践一安装部署</title>
+      <link>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</link>
+      <pubDate>Fri, 07 May 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</guid>
+      <description>简介&amp;amp;架构 Argo Workflows是一个开源容器级别工作流引擎，用于在Kubernetes上协调并行作业。 Argo Workflows通过抽象K</description>
+    </item>
+    
+    <item>
+      <title>Gitlab runner配置ceph s3</title>
+      <link>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</link>
+      <pubDate>Fri, 26 Mar 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</guid>
+      <description>对于前端项目Npm构建的时候，经常拉取前端库耗时比较长，另外不同的job之间复用也是一个问题，无论是artifacts或者cache最终我们</description>
+    </item>
+    
+    <item>
+      <title>terraform自动化创建ECS</title>
+      <link>https://wnote.com/post/devops-terraform-create-aliyun-ecs/</link>
+      <pubDate>Fri, 26 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-create-aliyun-ecs/</guid>
+      <description>快速创建一台阿里云ECS主机 指定terraform版本 这里我们指定了阿里云provider版本信息，并设置了terraform的版本要求 # mkdir</description>
+    </item>
+    
+    <item>
+      <title>terraform安装与命令详解</title>
+      <link>https://wnote.com/post/devops-terraform-command-detail/</link>
+      <pubDate>Thu, 25 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-command-detail/</guid>
+      <description>安装Terraform Mac系统安装 brew tap hashicorp/tap brew install hashicorp/tap/terraform Linux系统安装 ubuntu安装 curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - sudo apt-add-repository &amp;quot;deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main&amp;quot; sudo apt-get update &amp;amp;&amp;amp; sudo apt-get install terraform cento</description>
+    </item>
+    
+    <item>
+      <title>自动化编排工具Terraform介绍</title>
+      <link>https://wnote.com/post/devops-terraform-about/</link>
+      <pubDate>Wed, 24 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-about/</guid>
+      <description>Terraform是什么？： Terraform是由HashiCorp公司在2014年左右推出的开源资源编排工具, 目前几乎所有的主流云服务商都</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD配合Jenkins Pipeline自动化部署应用</title>
+      <link>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</link>
+      <pubDate>Wed, 29 Jul 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</guid>
+      <description>创建helm仓库 首先，创建基础Helm模版仓库： helm create template . 对于实际的部署中，需要根据自己的业务定制自己的helm模版，我这里直接使用我们内部自</description>
+    </item>
+    
+    <item>
+      <title>argocd部署deployment出现: no space left on device</title>
+      <link>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</link>
+      <pubDate>Mon, 18 May 2020 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</guid>
+      <description>故障现象 上午通过argocd部署几个业务应用，部署了2个以后，第三方死活部署不成功，相同的配置，知识集群不一样，怎么会出现这样的问题呢？ 于是</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD添加多集群</title>
+      <link>https://wnote.com/post/cicd-argocd-add-clusters/</link>
+      <pubDate>Tue, 05 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-add-clusters/</guid>
+      <description>生成argocd管理用户token 登陆dashboard，settings&amp;ndash;&amp;gt;Accounts&amp;ndash;&amp;gt;adm</description>
+    </item>
+    
+    <item>
+      <title>ArgoCD安部部署</title>
+      <link>https://wnote.com/post/cicd-argocd-install-in-k8s/</link>
+      <pubDate>Fri, 01 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-install-in-k8s/</guid>
+      <description>安装部署 ArgoCD的部署非常简单，安装官方的部署方法(HA模式： kubectl create namespace argocd kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v1.5.2/manifests/ha/install.yaml 可以按照需求调整部署文件，待pod顺利启动后 # kubectl -n argocd get</description>
+    </item>
+    
+    <item>
+      <title>Hugo&#43;Github搭建个人博客</title>
+      <link>https://wnote.com/post/tools-hugo-github-blog/</link>
+      <pubDate>Tue, 10 Mar 2020 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-hugo-github-blog/</guid>
+      <description>Hugo介绍 之前博客一直使用hexo搭建,随着用golang越来越多，一直想把博客也迁移到hugo,hugo就不用多说了go语言编写的静态网</description>
+    </item>
+    
+    <item>
+      <title>kubernetes集群添加用户</title>
+      <link>https://wnote.com/post/kubernetes-add-user/</link>
+      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-add-user/</guid>
+      <description>之前通过ansible搭建了kubernetes集群环境,这里需求主要是添加一个用户进行日常管理，并限制到指定的namespace，接下来进</description>
+    </item>
+    
+    <item>
+      <title>kubernetes集群部署traefik2.1</title>
+      <link>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</link>
+      <pubDate>Tue, 17 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</guid>
+      <description>架构&amp;amp;概念 Traefik2.x版本相比1.7.x架构有很大变化，正如上边这张架构图，最主要的功能是支持了TCP协议、增加了Route</description>
+    </item>
+    
+    <item>
+      <title>kubeasz部署k8s集群</title>
+      <link>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</link>
+      <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</guid>
+      <description>环境准备 Master节点 172.16.244.14 172.16.244.16 172.16.244.18 Node节点 172.16.244.25 172.16.244.27 Master节点VIP地址: 172.16.243.13 部署工具:Ansible/kubeasz 初始化环境 安装Ansib</description>
+    </item>
+    
+    <item>
+      <title>基于K8S部署gitlab-runner</title>
+      <link>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</link>
+      <pubDate>Thu, 14 Nov 2019 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</guid>
+      <description>部署gitlab-runner 这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitl</description>
+    </item>
+    
+    <item>
+      <title>基于Docker-compose搭建jenkins</title>
+      <link>https://wnote.com/post/cicd-jenkins-install/</link>
+      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
+      <description>docker-compose配置 version: &#39;2&#39; services: jenkins: image: jenkins/jenkins:latest restart: always environment: JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot; ports: - &amp;quot;80:8080&amp;quot; - &amp;quot;50000:50000&amp;quot; volumes: - &#39;/ssd/jenkins:/var/jenkins_home&#39; - &#39;/var/run/docker.sock:/var/run/docker.sock&#39; - &#39;/etc/localtime:/etc/localtime:ro&#39; dns: 223.5.5.5 networks: - extnetwork networks: extnetwork: ipam: config: - subnet: 172.255.0.0/16 启动服务 docker-compose up -d</description>
+    </item>
+    
+    <item>
+      <title>Mac系统配置炫酷终端(oh my zsh)</title>
+      <link>https://wnote.com/post/tools-zsh-cool-install/</link>
+      <pubDate>Sat, 10 Nov 2018 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-zsh-cool-install/</guid>
+      <description>brew工具 官网:https://brew.sh 安装brew /usr/bin/ruby -e &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;quot; 修改brew源为国内源 git -C &amp;quot;$(brew --repo)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git git -C &amp;quot;$(brew --repo homebrew/core)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git git -C &amp;quot;$(brew --repo homebrew/cask)&amp;quot; remote set-url</description>
+    </item>
+    
+    <item>
+      <title>Git日常命令总结</title>
+      <link>https://wnote.com/post/linux-git-commands-base/</link>
+      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-git-commands-base/</guid>
+      <description>Git全局设置： git config --global user.name &amp;quot;wanzi&amp;quot; git config --global user.email &amp;quot;iwz2099@163.com&amp;quot; Git提交代码 git clone git@github.com:iwz2099/test.git cd test touch README.md git add README.md git commit -m &amp;quot;add README&amp;quot; git push -u origin master #上面命令将本地的master分支推送到远程ori</description>
+    </item>
+    
+    <item>
+      <title>Dockerfile多阶段构建</title>
+      <link>https://wnote.com/post/docker-dockerfile-multi-stage/</link>
+      <pubDate>Mon, 02 Jul 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-multi-stage/</guid>
+      <description>Docker多阶段构建理解: 构建镜像需要有一个基础镜像,后续操作就会基于该基础镜像构建 docker镜像文件里有层级概念,每执行一次RUN指令</description>
+    </item>
+    
+    <item>
+      <title>Dockerfile语法详情</title>
+      <link>https://wnote.com/post/docker-dockerfile-details/</link>
+      <pubDate>Thu, 21 Jun 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-details/</guid>
+      <description>FROM 指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共</description>
+    </item>
+    
+    <item>
+      <title>Docker基础命令</title>
+      <link>https://wnote.com/post/docker-commands-base/</link>
+      <pubDate>Wed, 20 Jun 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-commands-base/</guid>
+      <description>常用命令 docker info #查看本地docker信息 docker search openresty #搜索远程镜像仓库 docker images #查看当前系统镜像仓库镜像 docker ps #查看当前正在运行容器 docker pull centos #获取远程镜像，</description>
+    </item>
+    
+  </channel>
+</rss>

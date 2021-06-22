@@ -1,0 +1,508 @@
+<?xml-stylesheet type="text/xsl" href="https://wnote.com/sitemap.xsl"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://wnote.com/about/</loc>
+    <lastmod>2021-03-10T21:41:52+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/argo/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/argo-workflow/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/cicd/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/workflow/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/</loc>
+    <lastmod>2021-05-07T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ceph/</loc>
+    <lastmod>2021-03-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/gitlab/</loc>
+    <lastmod>2021-03-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</loc>
+    <lastmod>2021-03-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/gitlab-runner/</loc>
+    <lastmod>2021-03-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/aliyun/</loc>
+    <lastmod>2021-02-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/devops/</loc>
+    <lastmod>2021-02-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/terraform/</loc>
+    <lastmod>2021-02-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/devops-terraform-create-aliyun-ecs/</loc>
+    <lastmod>2021-02-26T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/devops-terraform-command-detail/</loc>
+    <lastmod>2021-02-25T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/devops-terraform-about/</loc>
+    <lastmod>2021-02-24T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/argocd/</loc>
+    <lastmod>2020-07-29T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</loc>
+    <lastmod>2020-07-29T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/k8s/</loc>
+    <lastmod>2020-07-29T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</loc>
+    <lastmod>2020-05-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/cicd/</loc>
+    <lastmod>2020-05-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-argocd-add-clusters/</loc>
+    <lastmod>2020-05-05T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-argocd-install-in-k8s/</loc>
+    <lastmod>2020-05-01T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/blog/</loc>
+    <lastmod>2020-03-10T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/github/</loc>
+    <lastmod>2020-03-10T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/hugo/</loc>
+    <lastmod>2020-03-10T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/tools-hugo-github-blog/</loc>
+    <lastmod>2020-03-10T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/tools/</loc>
+    <lastmod>2020-03-10T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/cfssl/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/kubernetes/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-add-user/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ingress/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/traefik/</loc>
+    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ansible/</loc>
+    <lastmod>2019-12-12T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/kubeasz/</loc>
+    <lastmod>2019-12-12T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</loc>
+    <lastmod>2019-12-12T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</loc>
+    <lastmod>2019-11-14T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ci/</loc>
+    <lastmod>2019-11-11T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/jenkins/</loc>
+    <lastmod>2019-11-11T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/cicd-jenkins-install/</loc>
+    <lastmod>2019-11-11T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/brew/</loc>
+    <lastmod>2018-11-10T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/iterm2/</loc>
+    <lastmod>2018-11-10T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/mac/</loc>
+    <lastmod>2018-11-10T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/tools-zsh-cool-install/</loc>
+    <lastmod>2018-11-10T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/zsh/</loc>
+    <lastmod>2018-11-10T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/git/</loc>
+    <lastmod>2018-07-28T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/linux-git-commands-base/</loc>
+    <lastmod>2018-07-28T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/linux/</loc>
+    <lastmod>2018-07-28T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/docker/</loc>
+    <lastmod>2018-07-02T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/dockerfile/</loc>
+    <lastmod>2018-07-02T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/docker-dockerfile-multi-stage/</loc>
+    <lastmod>2018-07-02T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/docker-dockerfile-details/</loc>
+    <lastmod>2018-06-21T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/docker%E5%91%BD%E4%BB%A4/</loc>
+    <lastmod>2018-06-20T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/docker-commands-base/</loc>
+    <lastmod>2018-06-20T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/openssl/</loc>
+    <lastmod>2018-05-25T13:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ssl/</loc>
+    <lastmod>2018-05-25T13:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/linux-openssl-issue-private-certificate/</loc>
+    <lastmod>2018-05-25T13:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/%E8%AF%81%E4%B9%A6/</loc>
+    <lastmod>2018-05-25T13:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/saltapi/</loc>
+    <lastmod>2018-02-15T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/saltstack/</loc>
+    <lastmod>2018-02-15T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/devops-saltstack-saltapi/</loc>
+    <lastmod>2018-02-15T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/salt/</loc>
+    <lastmod>2018-02-10T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/devops-saltstack-commands/</loc>
+    <lastmod>2018-02-10T16:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/pep8/</loc>
+    <lastmod>2018-01-20T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/categories/python/</loc>
+    <lastmod>2018-01-20T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/python-coding-standards/</loc>
+    <lastmod>2018-01-20T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/%E7%BC%96%E7%A0%81%E8%A7%84%E8%8C%83/</loc>
+    <lastmod>2018-01-20T10:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+</urlset>

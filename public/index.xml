@@ -1,0 +1,2885 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>丸子有记</title>
+    <link>https://wnote.com/</link>
+    <description>Recent content on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    
+        <atom:link href="https://wnote.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>about</title>
+      <link>https://wnote.com/about/</link>
+      <pubDate>Mon, 20 Aug 2018 21:38:52 +0800</pubDate>
+      
+      <guid>https://wnote.com/about/</guid>
+      
+        <description>&lt;h2 id=&#34;关于我&#34;&gt;关于我&lt;/h2&gt;
+&lt;p&gt;我的网名&amp;quot;丸子说&amp;quot;, 目前在一家人工智能公司担任DevOps，业余时间喜欢看看书、写写博客, 喜欢以博会友。&lt;/p&gt;
+&lt;h2 id=&#34;关于本站&#34;&gt;关于本站&lt;/h2&gt;
+&lt;p&gt;这个站点的域名是 &lt;code&gt;wnote.com&lt;/code&gt; ，w寓意“丸子”，因此wnote可以理解为丸子有记，有忆可记.&lt;/p&gt;
+&lt;h2 id=&#34;丸子日常&#34;&gt;丸子日常&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;主力操作系统&lt;/strong&gt; —— &lt;strong&gt;Mac&amp;amp;&amp;amp;Linux&lt;/strong&gt; , 喜欢Mac随时随地敲打命令、写代码感觉。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;编辑器&lt;/strong&gt; —— &lt;strong&gt;Vim&amp;amp;&amp;amp;VsCode&amp;amp;&amp;amp;Goland&lt;/strong&gt; ，vim是Linux文本编辑标配，VsCode我主要进行前端和Python脚本调试，Goland开发后端项目&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;编程语言&lt;/strong&gt; —— 熟悉程度由高到低 &lt;code&gt;shell&lt;/code&gt;, &lt;code&gt;Python&lt;/code&gt;, &lt;code&gt;Golang&lt;/code&gt;, &lt;code&gt;Html/Css/Js&lt;/code&gt; 。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;键盘&lt;/strong&gt; —— Cherry G80 红轴&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>Argo Worflow实践一安装部署</title>
+      <link>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</link>
+      <pubDate>Fri, 07 May 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argo-workflow-install-in-k8s/</guid>
+      
+        <description>&lt;h2 id=&#34;简介架构&#34;&gt;简介&amp;amp;架构&lt;/h2&gt;
+&lt;p&gt;Argo Workflows是一个开源容器级别工作流引擎，用于在Kubernetes上协调并行作业。 Argo Workflows通过抽象Kubernetes CRD（自定义资源定义）来实现整个架构功能，比如Workflow Template、Workflow、Cron Workflow。&lt;/p&gt;
+&lt;p&gt;Argo workflow能做什么？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;定义工作流，工作流中的每个步骤都是一个容器。&lt;/li&gt;
+&lt;li&gt;将多步骤工作流建模为一系列任务，或者使用有向无环图（DAG）捕获任务之间的依存关系。&lt;/li&gt;
+&lt;li&gt;使用Kubernetes上的ArgoWorkflow，可以在短时间内轻松运行用于计算机学习或数据处理的计算密集型作业。&lt;/li&gt;
+&lt;li&gt;无需配置复杂的软件开发产品，即可在Kubernetes上本地运行CI / CD管道。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Argo workflow有哪些功能?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Workflow ：调用多个工作流模版进行任务编排，通过不同顺序来执行，&lt;/li&gt;
+&lt;li&gt;Workflow Template：Workflow的模版，是对workflow的一种定义，因此workflow template内部或者集群其他workflow和workflow template都可以调用。&lt;/li&gt;
+&lt;li&gt;Cluster Workflow Template：集群级别Workflow Template，通过clusterrole角色授权可以访问集群所有namespace&lt;/li&gt;
+&lt;li&gt;Cron Wrokflow：任务计划类型工作流，相当于高级版的k8s cronjob。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;安装配置&#34;&gt;安装配置&lt;/h2&gt;
+&lt;h3 id=&#34;安装argo-workflow&#34;&gt;安装argo workflow&lt;/h3&gt;
+&lt;p&gt;这里我们安装的稳定版本2.12.10，整个安装过程会配置service account、role、ClusterRole、deployment等&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubectl create ns argo
+kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.12.10/manifests/install.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置ingress集群外部访问&#34;&gt;设置Ingress集群外部访问&lt;/h3&gt;
+&lt;p&gt;由于我们的集群环境ingress controller采用的是traefik，而argo workflow默认内部访问的方式是通过https访问，因此我这里只有添加相关注解(annotations)才能转发请求到argo-server&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+  name: argo-server
+  namespace: argo
+spec:
+  rules:
+  - host: argo.test.cn
+    http:
+      paths:
+      - backend:
+          serviceName: argo-server
+          servicePort: web
+        path: /
+status:
+  loadBalancer: {}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;集群外部访问：https://argo.test.cn&lt;/p&gt;
+&lt;h2 id=&#34;workflow简单测试&#34;&gt;workflow简单测试&lt;/h2&gt;
+&lt;p&gt;这里我们以hello world为例子测试：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# argo submit -n argo --watch https://raw.githubusercontent.com/argoproj/argo-workflows/master/examples/hello-world.yaml
+Name:                hello-world-4mffd
+Namespace:           argo
+ServiceAccount:      default
+Status:              Pending
+Created:             Fri May 07 16:11:25 +0800 (now)
+Name:                hello-world-4mffd
+Namespace:           argo
+ServiceAccount:      default
+Status:              Pending
+Created:             Fri May 07 16:11:25 +0800 (now)
+Name:                hello-world-4mffd
+Namespace:           argo
+ServiceAccount:      default
+Status:              Running
+Created:             Fri May 07 16:11:25 +0800 (now)
+Started:             Fri May 07 16:11:25 +0800 (now)
+Duration:            0 seconds
+
+STEP                  TEMPLATE  PODNAME            DURATION  MESSAGE
+ ◷ hello-world-4mffd  whalesay  hello-world-4mffd  0s
+Name:                hello-world-4mffd
+Namespace:           argo
+ServiceAccount:      default
+Status:              Running
+Created:             Fri May 07 16:11:25 +0800 (10 seconds ago)
+Started:             Fri May 07 16:11:25 +0800 (10 seconds ago)
+Duration:            10 seconds
+
+STEP                  TEMPLATE  PODNAME            DURATION  MESSAGE
+ ◷ hello-world-4mffd  whalesay  hello-world-4mffd  10s       ContainerCreating
+Name:                hello-world-4mffd
+Namespace:           argo
+ServiceAccount:      default
+Status:              Succeeded
+Conditions:
+ Completed           True
+Created:             Fri May 07 16:11:25 +0800 (2 minutes ago)
+Started:             Fri May 07 16:11:25 +0800 (2 minutes ago)
+Finished:            Fri May 07 16:14:18 +0800 (now)
+Duration:            2 minutes 53 seconds
+ResourcesDuration:   1m18s*cpu,1m18s*memory
+
+STEP                  TEMPLATE  PODNAME            DURATION  MESSAGE
+ ✔ hello-world-4mffd  whalesay  hello-world-4mffd  2m
+
+# argo list -n argo
+NAME                STATUS      AGE   DURATION   PRIORITY
+hello-world-4mffd   Succeeded   3m    2m         0
+
+# argo logs -f hello-world-4mffd -n argo
+hello-world-4mffd:  _____________
+hello-world-4mffd: &amp;lt; hello world &amp;gt;
+hello-world-4mffd:  -------------
+hello-world-4mffd:     \
+hello-world-4mffd:      \
+hello-world-4mffd:       \
+hello-world-4mffd:                     ##        .
+hello-world-4mffd:               ## ## ##       ==
+hello-world-4mffd:            ## ## ## ##      ===
+hello-world-4mffd:        /&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;&amp;quot;___/ ===
+hello-world-4mffd:   ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
+hello-world-4mffd:        \______ o          __/
+hello-world-4mffd:         \    \        __/
+hello-world-4mffd:           \____\______/
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Gitlab runner配置ceph s3</title>
+      <link>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</link>
+      <pubDate>Fri, 26 Mar 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-runner-ceph-s3/</guid>
+      
+        <description>&lt;blockquote&gt;
+&lt;p&gt;对于前端项目Npm构建的时候，经常拉取前端库耗时比较长，另外不同的job之间复用也是一个问题，无论是artifacts或者cache最终我们需要持久化复用文件，这里我们以cache为例&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;注意：这里的Gitlab runner是采用helm chart方式部署到k8s集群，runner部署忽略；需要提前准备ceph s3的密钥对，用于配置accesskey和secretkey&lt;/p&gt;
+&lt;h2 id=&#34;创建k8s-secret&#34;&gt;创建k8s secret&lt;/h2&gt;
+&lt;p&gt;给后边Gitlab Runner连接ceph s3使用。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+data:
+  accesskey: N1NMT0hIRzYxddfsgxVzVssddfsdY=
+  secretkey: d25Uc0NDQVdsfsdUkssCQ1VsdEwxeUsdsNwb2R4TnRzZDliTG1DTUN6cQ==
+kind: Secret
+metadata:
+  name: gitlab-runner-s3
+  namespace: gitlab-managed-apps
+type: Opaque
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;helm部署gitlab-runner&#34;&gt;helm部署gitlab runner&lt;/h2&gt;
+&lt;p&gt;具体Gitlab helm chart参考：https://gitlab.com/gitlab-org/charts/gitlab-runner.git，修改helm chart目录下values.yaml内容如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cache:
+  ## General settings
+  cacheType: s3
+  cachePath: &amp;quot;devops&amp;quot; #指定ceph s3缓存路径，这里我们以部门来区分
+  cacheShared: true
+   
+  ## S3 settings
+  s3ServerAddress: &amp;quot;ops-rgw.test.cn&amp;quot;
+  s3BucketName: &amp;quot;runners-cache&amp;quot;
+  s3BucketLocation:
+  s3CacheInsecure: true
+  secretName: &amp;quot;gitlab-runner-s3&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更新helm配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd gitlab-runner
+helm upgrade   runner-devops -f values.yaml -n gitlab-runner .
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;测试gitlab-ci任务&#34;&gt;测试gitlab CI任务&lt;/h2&gt;
+&lt;p&gt;配置gitlab Ci，修改.gitlab-ci.yaml，这里以前端项目构建为例：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;stages:
+  - Build
+   
+build-and-deploy:
+  image: registry.test.cn/devops/node:latest
+  stage: Build
+  cache:
+    key: devops-vue
+    paths:
+      - node_modules/
+      - .yarn
+  tags:
+    - devopstest
+  script:
+    - yarn config set registry https://r.cnpmjs.org
+    - yarn config set @test:registry https://npm.test.cn/
+    - yarn --pure-lockfile --cache-folder .yarn --network-timeout 600000
+    - yarn build
+  when: always
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Gitlab CI触发构建任务以后，我们观察JOB构建任务实时情况，这时缓存文件已经上传到ceph s3，后期再构建编译就大大提高了效率！&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;64 Creating cache devops-vue-4...
+65 node_modules/: found 30710 matching files and directories
+66 .yarn: found 34390 matching files and directories 
+67 Uploading cache.zip to https://ops-rgw.test.cn/runners-cache/devops/project/4187/devops-vue-js-starter-4
+68 Created cache
+70Cleaning up file based variables
+00:00
+72 Job succeeded
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>terraform自动化创建ECS</title>
+      <link>https://wnote.com/post/devops-terraform-create-aliyun-ecs/</link>
+      <pubDate>Fri, 26 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-create-aliyun-ecs/</guid>
+      
+        <description>&lt;h2 id=&#34;快速创建一台阿里云ecs主机&#34;&gt;快速创建一台阿里云ECS主机&lt;/h2&gt;
+&lt;h3 id=&#34;指定terraform版本&#34;&gt;指定terraform版本&lt;/h3&gt;
+&lt;p&gt;这里我们指定了阿里云provider版本信息，并设置了terraform的版本要求&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# mkdir aliyun-ecs-one &amp;amp;&amp;amp; cd aliyun-ecs-one
+# touch versions.tf
+# vim versions.tf
+ terraform {
+  required_providers {
+    alicloud = {
+      source  = &amp;quot;aliyun/alicloud&amp;quot;
+      version = &amp;quot;1.115.1&amp;quot;
+    }
+  }
+
+  required_version = &amp;quot;&amp;gt;= 0.12&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置变量&#34;&gt;配置变量&lt;/h3&gt;
+&lt;p&gt;这里主要指定密钥对、云region、ECS账户和镜像信息&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# vim variables.tf
+# 阿里云子账户access_key
+variable &amp;quot;alicloud_access_key&amp;quot; {
+  default     = &amp;quot;LTAI4GBXXXXXXXXXXXXXXXXXXXXXX&amp;quot;
+  description = &amp;quot;The Alicloud Access Key ID to launch resources. Support to environment &#39;ALICLOUD_ACCESS_KEY&#39;.&amp;quot;
+}
+
+# 阿里云子账户secret_key
+variable &amp;quot;alicloud_secret_key&amp;quot; {
+  default     = &amp;quot;4Z4gbl3dXXXXXXXXXXXXXXXXXXXXX&amp;quot;
+  description = &amp;quot;The Alicloud Access Secret Key to launch resources.  Support to environment &#39;ALICLOUD_SECRET_KEY&#39;.&amp;quot;
+}
+
+# 阿里云区域，这里为杭州地区
+variable &amp;quot;region&amp;quot; {
+  default     = &amp;quot;cn-hangzhou&amp;quot;
+  description = &amp;quot;The Alicloud region resources.  Support to environment &#39;REGION&#39;.&amp;quot;
+}
+
+# 设置阿里云杭州区域可用机房，这里设置为cn-hangzhou-i
+variable &amp;quot;availability_zone&amp;quot; {
+  description = &amp;quot;The available zone to launch ecs instance and other resources.&amp;quot;
+  default     = &amp;quot;cn-hangzhou-i&amp;quot;
+}
+
+# 设置镜像版本
+variable &amp;quot;image_id&amp;quot; {
+  default = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+}
+
+# 设置ECS实例类型，对于
+variable &amp;quot;ecs_type&amp;quot; {
+  default = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+}
+
+# 指定ECS实例密码
+variable &amp;quot;ecs_password&amp;quot; {
+  default = &amp;quot;Test12345&amp;quot;
+}
+
+# 指定ECS实例磁盘类型，这里为普通云盘
+variable &amp;quot;disk_category&amp;quot; {
+  default = &amp;quot;cloud_efficiency&amp;quot;
+}
+
+# 设置磁盘大小
+variable &amp;quot;disk_size&amp;quot; {
+  default = &amp;quot;40&amp;quot;
+}
+
+# 设置上网扣费泪行，默认为PayByTraffic（按流量计费）
+variable &amp;quot;internet_charge_type&amp;quot; {
+  default = &amp;quot;PayByTraffic&amp;quot;
+}
+
+# 公共网络最大传出带宽，从1.7版本，默认设置大于0会自动申请独享公网IP地址
+variable &amp;quot;internet_max_bandwidth_out&amp;quot; {
+  default = 5
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置实例相关资源&#34;&gt;配置实例相关资源&lt;/h3&gt;
+&lt;p&gt;这里由于是测试，创建实例需要提前创建vpc，vswitch，安全组，安全组规则&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# vim main.tf
+provider &amp;quot;alicloud&amp;quot; {
+  region     = var.region
+  access_key = var.alicloud_access_key
+  secret_key = var.alicloud_secret_key
+}
+
+resource &amp;quot;alicloud_vpc&amp;quot; &amp;quot;vpc&amp;quot; {
+  name       = &amp;quot;tf_test_foo&amp;quot;
+  cidr_block = &amp;quot;10.100.0.0/16&amp;quot;
+}
+
+resource &amp;quot;alicloud_vswitch&amp;quot; &amp;quot;vsw&amp;quot; {
+  vpc_id            = alicloud_vpc.vpc.id
+  cidr_block        = &amp;quot;10.100.0.0/24&amp;quot;
+  availability_zone = var.availability_zone
+}
+
+resource &amp;quot;alicloud_security_group&amp;quot; &amp;quot;default&amp;quot; {
+  name   = &amp;quot;default&amp;quot;
+  vpc_id = alicloud_vpc.vpc.id
+}
+
+resource &amp;quot;alicloud_security_group_rule&amp;quot; &amp;quot;allow_all_tcp&amp;quot; {
+  type              = &amp;quot;ingress&amp;quot;
+  ip_protocol       = &amp;quot;tcp&amp;quot;
+  nic_type          = &amp;quot;intranet&amp;quot;
+  policy            = &amp;quot;accept&amp;quot;
+  port_range        = &amp;quot;1/65535&amp;quot;
+  priority          = 1
+  security_group_id = alicloud_security_group.default.id
+  cidr_ip           = &amp;quot;0.0.0.0/0&amp;quot;
+}
+
+resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+  # cn-hangzhou
+  availability_zone = var.availability_zone
+  security_groups   = alicloud_security_group.default.*.id
+
+  instance_type        = var.ecs_type
+  system_disk_category = var.disk_category
+  image_id             = var.image_id
+  instance_name        = &amp;quot;wanzi_tf001&amp;quot;
+  vswitch_id           = alicloud_vswitch.vsw.id
+  password             = var.ecs_password
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行plan，模拟执行效果&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform  plan
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # alicloud_instance.wanzi_test will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+      + availability_zone             = &amp;quot;cn-hangzhou-i&amp;quot;
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + dry_run                       = false
+      + host_name                     = (known after apply)
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;wanzi_tf001&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 0
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = (known after apply)
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_groups               = (known after apply)
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_efficiency&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + volume_tags                   = (known after apply)
+      + vswitch_id                    = (known after apply)
+    } 
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建云主机, 这个过程会请求阿里云API并在本地生成terraform state文件&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform apply
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # alicloud_instance.wanzi_test will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+      + availability_zone             = &amp;quot;cn-hangzhou-i&amp;quot;
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + dry_run                       = false
+      + host_name                     = (known after apply)
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;wanzi_tf001&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 0
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = (known after apply)
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_groups               = (known after apply)
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_efficiency&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + volume_tags                   = (known after apply)
+      + vswitch_id                    = (known after apply)
+    }
+
+  # alicloud_security_group.default will be created
+  + resource &amp;quot;alicloud_security_group&amp;quot; &amp;quot;default&amp;quot; {
+      + id                  = (known after apply)
+      + inner_access        = (known after apply)
+      + inner_access_policy = (known after apply)
+      + name                = &amp;quot;default&amp;quot;
+      + security_group_type = &amp;quot;normal&amp;quot;
+      + vpc_id              = (known after apply)
+    }
+......
+......
+Plan: 5 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only &#39;yes&#39; will be accepted to approve.
+
+  Enter a value: yes
+
+alicloud_vpc.vpc: Creating...
+alicloud_vpc.vpc: Creation complete after 9s [id=vpc-bp1kulcyygsi727aay4hd]
+alicloud_security_group.default: Creating...
+alicloud_vswitch.vsw: Creating...
+alicloud_security_group.default: Creation complete after 1s [id=sg-bp11s5pka9pxtj6pn4xq]
+alicloud_security_group_rule.allow_all_tcp: Creating...
+alicloud_security_group_rule.allow_all_tcp: Creation complete after 1s [id=sg-bp11s5pka9pxtj6pn4xq:ingress:tcp:1/65535:intranet:0.0.0.0/0🉑1]
+alicloud_vswitch.vsw: Creation complete after 4s [id=vsw-bp1wgpgz9z8y2lfsl2beo]
+alicloud_instance.wanzi_test: Creating...
+alicloud_instance.wanzi_test: Still creating... [10s elapsed]
+alicloud_instance.wanzi_test: Still creating... [20s elapsed]
+alicloud_instance.wanzi_test: Creation complete after 22s [id=i-bp1gt9mb9asadff9r2zr]
+
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.    
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过以上操作，我们可以看出已经完成资源的创建，这个过程当前目录也会生成对应tfstate文件，这个数据非常重要，千万不要删除。
+另外，后续可以通过terraform show查看我们创建资源数据信息。&lt;/p&gt;
+&lt;h2 id=&#34;批量创建多台ecs云主机&#34;&gt;批量创建多台ECS云主机&lt;/h2&gt;
+&lt;h3 id=&#34;配置module&#34;&gt;配置Module&lt;/h3&gt;
+&lt;p&gt;由于https://registry.terraform.io/上已经有很多优秀的模块，我们这里直接拿来alibaba/ecs-instance/alicloud这个module进行操作即可。&lt;/p&gt;
+&lt;p&gt;更多关于官方ECS module参考这里：https://github.com/terraform-alicloud-modules/terraform-alicloud-ecs-instance&lt;/p&gt;
+&lt;p&gt;这里variables.tf和versions.tf配置还是基于第一步配置；这里我们在main.tf增加module资源批量创建ECS配置，如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;module &amp;quot;tf-instances&amp;quot; {
+ source                      = &amp;quot;alibaba/ecs-instance/alicloud&amp;quot;
+ region                      = &amp;quot;cn-hangzhou&amp;quot;
+ number_of_instances         = &amp;quot;3&amp;quot;
+ vswitch_id                  = alicloud_vswitch.vsw.id
+ group_ids                   = [alicloud_security_group.default.id]
+ private_ips                 = [&amp;quot;10.100.0.10&amp;quot;, &amp;quot;10.100.0.11&amp;quot;, &amp;quot;10.100.0.12&amp;quot;]
+ image_ids                   = [&amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;]
+ instance_type               = var.ecs_type
+ internet_max_bandwidth_out  = 10
+ associate_public_ip_address = true
+ instance_name               = &amp;quot;my_module_instances_&amp;quot;
+ host_name                   = &amp;quot;wanzi-cluster&amp;quot;
+ internet_charge_type        = &amp;quot;PayByTraffic&amp;quot;
+ password                    = var.ecs_password
+ system_disk_category        = &amp;quot;cloud_ssd&amp;quot;
+ data_disks = [
+  {
+    disk_category = &amp;quot;cloud_ssd&amp;quot;
+    disk_name     = &amp;quot;my_module_disk&amp;quot;
+    disk_size     = &amp;quot;50&amp;quot;
+  }
+ ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里需要注意默认情况下，internet_max_bandwidth_out配置以后，会自动申请一个独享公网IP地址，对于没有这个需求的，可以不用配置。&lt;/p&gt;
+&lt;h3 id=&#34;批量创建资源&#34;&gt;批量创建资源&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;➜ terraform apply
+alicloud_vpc.vpc: Refreshing state... [id=vpc-bp1kulcyygsi727aay4hd]
+alicloud_vswitch.vsw: Refreshing state... [id=vsw-bp1wgpgz9z8y2lfsl2beo]
+alicloud_security_group.default: Refreshing state... [id=sg-bp11s5pka9pxtj6pn4xq]
+alicloud_security_group_rule.allow_all_tcp: Refreshing state... [id=sg-bp11s5pka9pxtj6pn4xq:ingress:tcp:1/65535:intranet:0.0.0.0/0🉑1]
+alicloud_instance.wanzi_test: Refreshing state... [id=i-bp1gt9mb9asadff9r2zr]
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # module.tf-instances.alicloud_instance.this[0] will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;this&amp;quot; {
+      + availability_zone             = (known after apply)
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + description                   = &amp;quot;An ECS instance came from terraform-alicloud-modules/ecs-instance&amp;quot;
+      + dry_run                       = false
+      + host_name                     = &amp;quot;wanzi-cluster001&amp;quot;
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;my_module_instances_001&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_charge_type          = &amp;quot;PayByTraffic&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 10
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = &amp;quot;10.100.0.10&amp;quot;
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_enhancement_strategy = &amp;quot;Active&amp;quot;
+      + security_groups               = [
+          + &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;,
+        ]
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_ssd&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + tags                          = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_001&amp;quot;
+        }
+      + volume_tags                   = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_001&amp;quot;
+        }
+      + vswitch_id                    = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+
+      + data_disks {
+          + category             = &amp;quot;cloud_efficiency&amp;quot;
+          + delete_with_instance = true
+          + encrypted            = false
+          + name                 = &amp;quot;TF_ECS_Disk&amp;quot;
+          + performance_level    = (known after apply)
+          + size                 = 40
+        }
+    }
+
+  # module.tf-instances.alicloud_instance.this[1] will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;this&amp;quot; {
+      + availability_zone             = (known after apply)
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + description                   = &amp;quot;An ECS instance came from terraform-alicloud-modules/ecs-instance&amp;quot;
+      + dry_run                       = false
+      + host_name                     = &amp;quot;wanzi-cluster002&amp;quot;
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;my_module_instances_002&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_charge_type          = &amp;quot;PayByTraffic&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 10
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = &amp;quot;10.100.0.11&amp;quot;
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_enhancement_strategy = &amp;quot;Active&amp;quot;
+      + security_groups               = [
+          + &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;,
+        ]
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_ssd&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + tags                          = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_002&amp;quot;
+        }
+      + volume_tags                   = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_002&amp;quot;
+        }
+      + vswitch_id                    = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+
+      + data_disks {
+          + category             = &amp;quot;cloud_efficiency&amp;quot;
+          + delete_with_instance = true
+          + encrypted            = false
+          + name                 = &amp;quot;TF_ECS_Disk&amp;quot;
+          + performance_level    = (known after apply)
+          + size                 = 40
+        }
+    }
+
+  # module.tf-instances.alicloud_instance.this[2] will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;this&amp;quot; {
+      + availability_zone             = (known after apply)
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + description                   = &amp;quot;An ECS instance came from terraform-alicloud-modules/ecs-instance&amp;quot;
+      + dry_run                       = false
+      + host_name                     = &amp;quot;wanzi-cluster003&amp;quot;
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;my_module_instances_003&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_charge_type          = &amp;quot;PayByTraffic&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 10
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = &amp;quot;10.100.0.12&amp;quot;
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_enhancement_strategy = &amp;quot;Active&amp;quot;
+      + security_groups               = [
+          + &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;,
+        ]
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_ssd&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + tags                          = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_003&amp;quot;
+        }
+      + volume_tags                   = {
+          + &amp;quot;Name&amp;quot; = &amp;quot;my_module_instances_003&amp;quot;
+        }
+      + vswitch_id                    = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+
+      + data_disks {
+          + category             = &amp;quot;cloud_efficiency&amp;quot;
+          + delete_with_instance = true
+          + encrypted            = false
+          + name                 = &amp;quot;TF_ECS_Disk&amp;quot;
+          + performance_level    = (known after apply)
+          + size                 = 40
+        }
+    }
+
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only &#39;yes&#39; will be accepted to approve.
+
+  Enter a value: yes
+
+module.tf-instances.alicloud_instance.this[2]: Creating...
+module.tf-instances.alicloud_instance.this[1]: Creating...
+module.tf-instances.alicloud_instance.this[0]: Creating...
+module.tf-instances.alicloud_instance.this[1]: Still creating... [10s elapsed]
+module.tf-instances.alicloud_instance.this[2]: Still creating... [10s elapsed]
+module.tf-instances.alicloud_instance.this[0]: Still creating... [10s elapsed]
+module.tf-instances.alicloud_instance.this[1]: Still creating... [20s elapsed]
+module.tf-instances.alicloud_instance.this[0]: Still creating... [20s elapsed]
+module.tf-instances.alicloud_instance.this[2]: Still creating... [20s elapsed]
+module.tf-instances.alicloud_instance.this[0]: Creation complete after 21s [id=i-bp1hwbo4htk8sbwxtk6o]
+module.tf-instances.alicloud_instance.this[1]: Creation complete after 21s [id=i-bp17lh41gywyih0xg6we]
+module.tf-instances.alicloud_instance.this[2]: Creation complete after 22s [id=i-bp11zlrl6vxeaerz4ad0]
+
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，整个创建多ECS实例的操作已经完成，后续如果对当前已经部署ecs资源有调整，进行基本write/plan/apply操作即可，这个过程会重启阿里云实例。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>terraform安装与命令详解</title>
+      <link>https://wnote.com/post/devops-terraform-command-detail/</link>
+      <pubDate>Thu, 25 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-command-detail/</guid>
+      
+        <description>&lt;h2 id=&#34;安装terraform&#34;&gt;安装Terraform&lt;/h2&gt;
+&lt;h3 id=&#34;mac系统安装&#34;&gt;Mac系统安装&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;linux系统安装&#34;&gt;Linux系统安装&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;ubuntu安装&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository &amp;quot;deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main&amp;quot;
+sudo apt-get update &amp;amp;&amp;amp; sudo apt-get install terraform
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;centos系统&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+sudo yum -y install terraform
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;验证安装&#34;&gt;验证安装&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# terraform -v
+Terraform v0.14.3
+
+Your version of Terraform is out of date! The latest version
+is 0.14.7. You can update by downloading from https://www.terraform.io/downloads.html
+# terraform
+Usage: terraform [global options] &amp;lt;subcommand&amp;gt; [args]
+
+The available commands for execution are listed below.
+The primary workflow commands are given first, followed by
+less common or more advanced commands.
+
+Main commands:
+  init          Prepare your working directory for other commands
+  validate      Check whether the configuration is valid
+  plan          Show changes required by the current configuration
+  apply         Create or update infrastructure
+  destroy       Destroy previously-created infrastructure
+
+All other commands:
+  console       Try Terraform expressions at an interactive command prompt
+  fmt           Reformat your configuration in the standard style
+  force-unlock  Release a stuck lock on the current workspace
+  get           Install or upgrade remote Terraform modules
+  graph         Generate a Graphviz graph of the steps in an operation
+  import        Associate existing infrastructure with a Terraform resource
+  login         Obtain and save credentials for a remote host
+  logout        Remove locally-stored credentials for a remote host
+  output        Show output values from your root module
+  providers     Show the providers required for this configuration
+  refresh       Update the state to match remote systems
+  show          Show the current state or a saved plan
+  state         Advanced state management
+  taint         Mark a resource instance as not fully functional
+  untaint       Remove the &#39;tainted&#39; state from a resource instance
+  version       Show the current Terraform version
+  workspace     Workspace management
+
+Global options (use these before the subcommand, if any):
+  -chdir=DIR    Switch to a different working directory before executing the
+                given subcommand.
+  -help         Show this help output, or the help for a specified subcommand.
+  -version      An alias for the &amp;quot;version&amp;quot; subcommand.
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;terraform命令之资源管理&#34;&gt;terraform命令之资源管理&lt;/h2&gt;
+&lt;h3 id=&#34;资源初始化&#34;&gt;资源初始化&lt;/h3&gt;
+&lt;p&gt;对于一个terraform资源项目，我这里创建了3个基本文件，分别为：main.tf（入口文件），variables.tf（变量信息），versions.tf（版本信息）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# ls 
+main.tf     variables.tf      versions.tf
+# terraform init
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of aliyun/alicloud from the dependency lock file
+- Using aliyun/alicloud v1.115.1 from the shared cache directory
+
+Terraform has been successfully initialized!
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;格式化terraform文件&#34;&gt;格式化terraform文件&lt;/h3&gt;
+&lt;p&gt;fmt默认会回格式化处理当前目录下.tf文件，并格式为标准的tf格式。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform fmt 
+main.tf
+variables.tf
+versions.tf
+# terraform fmt -diff  #格式化处理
+main.tf
+--- old/main.tf
++++ new/main.tf
+@@ -1,7 +1,7 @@
+ provider &amp;quot;alicloud&amp;quot; {
+   region     = var.region
+   access_key = var.alicloud_access_key
+-  secret_key =  var.alicloud_secret_key
++  secret_key = var.alicloud_secret_key
+ }
+
+ resource &amp;quot;alicloud_vpc&amp;quot; &amp;quot;vpc&amp;quot; {
+@@ -12,7 +12,7 @@
+ resource &amp;quot;alicloud_vswitch&amp;quot; &amp;quot;vsw&amp;quot; {
+   vpc_id            = alicloud_vpc.vpc.id
+   cidr_block        = &amp;quot;10.100.0.0/24&amp;quot;
+-  availability_zone =  var.availability_zone
++  availability_zone = var.availability_zone
+ }
+
+ resource &amp;quot;alicloud_security_group&amp;quot; &amp;quot;default&amp;quot; {
+variables.tf
+--- old/variables.tf
++++ new/variables.tf
+@@ -4,7 +4,7 @@
+ }
+
+ variable &amp;quot;alicloud_secret_key&amp;quot; {
+-  default                     = &amp;quot;4Z4gbl3d9TGz9jWobv9MPwInvyH2Kf&amp;quot;
++  default     = &amp;quot;4Z4gbl3d9TGz9jWobv9MPwInvyH2Kf&amp;quot;
+   description = &amp;quot;The Alicloud Access Secret Key to launch resources.  Support to environment &#39;ALICLOUD_SECRET_KEY&#39;.&amp;quot;
+ }
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建资源计划&#34;&gt;创建资源计划&lt;/h3&gt;
+&lt;p&gt;terraform plan 会检查一组更改的执行计划是否符合您的期望，而不会更改实际资源或状态。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform  plan
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # alicloud_instance.wanzi_test will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+      + availability_zone             = &amp;quot;cn-hangzhou-i&amp;quot;
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + dry_run                       = false
+      + host_name                     = (known after apply)
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;wanzi_tf001&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 0
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = (known after apply)
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_groups               = (known after apply)
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_efficiency&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + volume_tags                   = (known after apply)
+      + vswitch_id                    = (known after apply)
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建云资源&#34;&gt;创建云资源&lt;/h3&gt;
+&lt;p&gt;terraform apply 会自动生成一个资源创建计划，并批准执行该计划，同时在当前目录下会生成tfstate文件&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform apply
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # alicloud_instance.wanzi_test will be created
+  + resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+      + availability_zone             = &amp;quot;cn-hangzhou-i&amp;quot;
+      + credit_specification          = (known after apply)
+      + deletion_protection           = false
+      + dry_run                       = false
+      + host_name                     = (known after apply)
+      + id                            = (known after apply)
+      + image_id                      = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+      + instance_charge_type          = &amp;quot;PostPaid&amp;quot;
+      + instance_name                 = &amp;quot;wanzi_tf001&amp;quot;
+      + instance_type                 = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+      + internet_max_bandwidth_in     = (known after apply)
+      + internet_max_bandwidth_out    = 0
+      + key_name                      = (known after apply)
+      + password                      = (sensitive value)
+      + private_ip                    = (known after apply)
+      + public_ip                     = (known after apply)
+      + role_name                     = (known after apply)
+      + security_groups               = (known after apply)
+      + spot_strategy                 = &amp;quot;NoSpot&amp;quot;
+      + status                        = &amp;quot;Running&amp;quot;
+      + subnet_id                     = (known after apply)
+      + system_disk_category          = &amp;quot;cloud_efficiency&amp;quot;
+      + system_disk_performance_level = (known after apply)
+      + system_disk_size              = 40
+      + volume_tags                   = (known after apply)
+      + vswitch_id                    = (known after apply)
+    }
+
+  # alicloud_security_group.default will be created
+  + resource &amp;quot;alicloud_security_group&amp;quot; &amp;quot;default&amp;quot; {
+      + id                  = (known after apply)
+      + inner_access        = (known after apply)
+      + inner_access_policy = (known after apply)
+      + name                = &amp;quot;default&amp;quot;
+      + security_group_type = &amp;quot;normal&amp;quot;
+      + vpc_id              = (known after apply)
+    }
+......
+......
+Plan: 5 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only &#39;yes&#39; will be accepted to approve.
+
+  Enter a value: yes
+
+alicloud_vpc.vpc: Creating...
+alicloud_vpc.vpc: Creation complete after 9s [id=vpc-bp1kulcyygsi727aay4hd]
+alicloud_security_group.default: Creating...
+alicloud_vswitch.vsw: Creating...
+alicloud_security_group.default: Creation complete after 1s [id=sg-bp11s5pka9pxtj6pn4xq]
+alicloud_security_group_rule.allow_all_tcp: Creating...
+alicloud_security_group_rule.allow_all_tcp: Creation complete after 1s [id=sg-bp11s5pka9pxtj6pn4xq:ingress:tcp:1/65535:intranet:0.0.0.0/0🉑1]
+alicloud_vswitch.vsw: Creation complete after 4s [id=vsw-bp1wgpgz9z8y2lfsl2beo]
+alicloud_instance.wanzi_test: Creating...
+alicloud_instance.wanzi_test: Still creating... [10s elapsed]
+alicloud_instance.wanzi_test: Still creating... [20s elapsed]
+alicloud_instance.wanzi_test: Creation complete after 22s [id=i-bp1gt9mb9asadff9r2zr]
+
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看创建的资源信息&#34;&gt;查看创建的资源信息&lt;/h3&gt;
+&lt;p&gt;terraform show 会查看当前项目创建了哪些资源数据，&lt;/p&gt;
+&lt;p&gt;terraform show -json  以json形式查看数据&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform show
+# alicloud_instance.wanzi_test:
+resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;wanzi_test&amp;quot; {
+    availability_zone          = &amp;quot;cn-hangzhou-i&amp;quot;
+    deletion_protection        = false
+    dry_run                    = false
+    host_name                  = &amp;quot;iZbp1gt9mb9asadff9r2zrZ&amp;quot;
+    id                         = &amp;quot;i-bp1gt9mb9asadff9r2zr&amp;quot;
+    image_id                   = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+    instance_charge_type       = &amp;quot;PostPaid&amp;quot;
+    instance_name              = &amp;quot;wanzi_tf001&amp;quot;
+    instance_type              = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+    internet_charge_type       = &amp;quot;PayByTraffic&amp;quot;
+    internet_max_bandwidth_in  = -1
+    internet_max_bandwidth_out = 0
+    password                   = (sensitive value)
+    private_ip                 = &amp;quot;10.100.0.234&amp;quot;
+    security_groups            = [
+        &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;,
+    ]
+    spot_price_limit           = 0
+    spot_strategy              = &amp;quot;NoSpot&amp;quot;
+    status                     = &amp;quot;Running&amp;quot;
+    subnet_id                  = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+    system_disk_category       = &amp;quot;cloud_efficiency&amp;quot;
+    system_disk_size           = 40
+    volume_tags                = {}
+    vswitch_id                 = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+}
+
+# alicloud_security_group.default:
+resource &amp;quot;alicloud_security_group&amp;quot; &amp;quot;default&amp;quot; {
+    id                  = &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;
+    inner_access        = true
+    inner_access_policy = &amp;quot;Accept&amp;quot;
+    name                = &amp;quot;default&amp;quot;
+    security_group_type = &amp;quot;normal&amp;quot;
+    vpc_id              = &amp;quot;vpc-bp1kulcyygsi727aay4hd&amp;quot;
+}
+
+# alicloud_security_group_rule.allow_all_tcp:
+resource &amp;quot;alicloud_security_group_rule&amp;quot; &amp;quot;allow_all_tcp&amp;quot; {
+    cidr_ip           = &amp;quot;0.0.0.0/0&amp;quot;
+    id                = &amp;quot;sg-bp11s5pka9pxtj6pn4xq:ingress:tcp:1/65535:intranet:0.0.0.0/0🉑1&amp;quot;
+    ip_protocol       = &amp;quot;tcp&amp;quot;
+    nic_type          = &amp;quot;intranet&amp;quot;
+    policy            = &amp;quot;accept&amp;quot;
+    port_range        = &amp;quot;1/65535&amp;quot;
+    priority          = 1
+    security_group_id = &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;
+    type              = &amp;quot;ingress&amp;quot;
+}
+
+# alicloud_vpc.vpc:
+resource &amp;quot;alicloud_vpc&amp;quot; &amp;quot;vpc&amp;quot; {
+    cidr_block        = &amp;quot;10.100.0.0/16&amp;quot;
+    id                = &amp;quot;vpc-bp1kulcyygsi727aay4hd&amp;quot;
+    name              = &amp;quot;tf_test_foo&amp;quot;
+    resource_group_id = &amp;quot;rg-acfm2ogp24u3rcy&amp;quot;
+    route_table_id    = &amp;quot;vtb-bp1wy8srerq12rta02r03&amp;quot;
+    router_id         = &amp;quot;vrt-bp1apvobefvhshksnnwvm&amp;quot;
+    router_table_id   = &amp;quot;vtb-bp1wy8srerq12rta02r03&amp;quot;
+}
+
+# alicloud_vswitch.vsw:
+resource &amp;quot;alicloud_vswitch&amp;quot; &amp;quot;vsw&amp;quot; {
+    availability_zone = &amp;quot;cn-hangzhou-i&amp;quot;
+    cidr_block        = &amp;quot;10.100.0.0/24&amp;quot;
+    id                = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+    vpc_id            = &amp;quot;vpc-bp1kulcyygsi727aay4hd&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;标记污点&#34;&gt;标记污点&lt;/h3&gt;
+&lt;p&gt;terrraform taint 命令用于把某个资源标记为“被污染”状态，当再次执行 apply 命令时，这个被污染的资源将会被先释放，然后再创建一个新的，相当于对这个特定资源做了先删除后新建的操作。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform taint alicloud_instance.wanzi_test
+Resource instance alicloud_instance.wanzi_test has been marked as tainted.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;而terrraform untaint正好相反，用于取消“被污染”标记，使其恢复到正常的状态。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform untaint alicloud_instance.wanzi_test
+Resource instance alicloud_instance.wanzi_test has been successfully untainted.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;销毁云资源数据&#34;&gt;销毁云资源数据&lt;/h3&gt;
+&lt;p&gt;terraform destory 将根据当前资源配置，销毁云端资源数据&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#terraform destroy
+
+Plan: 0 to add, 0 to change, 5 to destroy.
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only &#39;yes&#39; will be accepted to confirm.
+
+  Enter a value: yes
+
+alicloud_security_group_rule.allow_all_tcp: Destroying... [id=sg-bp10tup89oothxz8tny1:ingress:tcp:1/65535:intranet:0.0.0.0/0🉑1]
+alicloud_instance.wanzi_test: Destroying... [id=i-bp10ukz4nlr894mhebgl]
+alicloud_security_group_rule.allow_all_tcp: Destruction complete after 0s
+alicloud_instance.wanzi_test: Still destroying... [id=i-bp10ukz4nlr894mhebgl, 10s elapsed]
+alicloud_instance.wanzi_test: Still destroying... [id=i-bp10ukz4nlr894mhebgl, 20s elapsed]
+alicloud_instance.wanzi_test: Destruction complete after 28s
+alicloud_security_group.default: Destroying... [id=sg-bp10tup89oothxz8tny1]
+alicloud_vswitch.vsw: Destroying... [id=vsw-bp1ap7ccst3fjxnw4pnza]
+alicloud_security_group.default: Destruction complete after 9s
+alicloud_vswitch.vsw: Still destroying... [id=vsw-bp1ap7ccst3fjxnw4pnza, 10s elapsed]
+alicloud_vswitch.vsw: Destruction complete after 20s
+alicloud_vpc.vpc: Destroying... [id=vpc-bp1obwt5ded2i0zlbu052]
+alicloud_vpc.vpc: Destruction complete after 3s
+
+Destroy complete! Resources: 5 destroyed.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;将云端数据导入到本地项目&#34;&gt;将云端数据导入到本地项目&lt;/h3&gt;
+&lt;p&gt;terraform import 通过云端实例ID来生成本地资源数据，本地目录会生成terraform.tfstate文件，对于本地项目已存在数据的导入前请先备份tfstate文件和.terraform目录；对于已经导入到本地的数据，可以通过terraform show展示出terrafrom文件格式，copy出来并进一步处理，即可得到tf资源文件内容。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# cat yunduan.tf
+resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;test999&amp;quot; {
+  # (resource arguments)
+}
+#
+# terraform import alicloud_instance.test999 i-bp1etiv4002h9q27lb97
+alicloud_instance.test999: Importing from ID &amp;quot;i-bp1etiv4002h9q27lb97&amp;quot;...
+alicloud_instance.test999: Import prepared!
+  Prepared alicloud_instance for import
+alicloud_instance.test999: Refreshing state... [id=i-bp1etiv4002h9q27lb97]
+
+Import successful!
+
+The resources that were imported are shown above. These resources are now in
+your Terraform state and will henceforth be managed by Terraform.
+# cat  terraform.tfstate
+{
+  &amp;quot;version&amp;quot;: 4,
+  &amp;quot;terraform_version&amp;quot;: &amp;quot;0.14.3&amp;quot;,
+  &amp;quot;serial&amp;quot;: 1,
+  &amp;quot;lineage&amp;quot;: &amp;quot;779fad5e-b076-8cfd-6041-f6eef8c88b8a&amp;quot;,
+  &amp;quot;outputs&amp;quot;: {},
+  &amp;quot;resources&amp;quot;: [
+    {
+      &amp;quot;mode&amp;quot;: &amp;quot;managed&amp;quot;,
+      &amp;quot;type&amp;quot;: &amp;quot;alicloud_instance&amp;quot;,
+      &amp;quot;name&amp;quot;: &amp;quot;test999&amp;quot;,
+      &amp;quot;provider&amp;quot;: &amp;quot;provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot;,
+      &amp;quot;instances&amp;quot;: [
+        {
+          &amp;quot;schema_version&amp;quot;: 0,
+          &amp;quot;attributes&amp;quot;: {
+            &amp;quot;allocate_public_ip&amp;quot;: null,
+            &amp;quot;auto_release_time&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;auto_renew_period&amp;quot;: null,
+            &amp;quot;availability_zone&amp;quot;: &amp;quot;cn-hangzhou-i&amp;quot;,
+            &amp;quot;credit_specification&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;data_disks&amp;quot;: [],
+            &amp;quot;deletion_protection&amp;quot;: false,
+            &amp;quot;description&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;dry_run&amp;quot;: null,
+            &amp;quot;force_delete&amp;quot;: null,
+            &amp;quot;host_name&amp;quot;: &amp;quot;iZbp1etiv4002h9q27lb97Z&amp;quot;,
+            &amp;quot;id&amp;quot;: &amp;quot;i-bp1etiv4002h9q27lb97&amp;quot;,
+            &amp;quot;image_id&amp;quot;: &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;,
+            &amp;quot;include_data_disks&amp;quot;: null,
+            &amp;quot;instance_charge_type&amp;quot;: &amp;quot;PostPaid&amp;quot;,
+            &amp;quot;instance_name&amp;quot;: &amp;quot;wanzi_tf001&amp;quot;,
+            &amp;quot;instance_type&amp;quot;: &amp;quot;ecs.s6-c1m2.small&amp;quot;,
+            &amp;quot;internet_charge_type&amp;quot;: &amp;quot;PayByTraffic&amp;quot;,
+            &amp;quot;internet_max_bandwidth_in&amp;quot;: -1,
+            &amp;quot;internet_max_bandwidth_out&amp;quot;: 0,
+            &amp;quot;io_optimized&amp;quot;: null,
+            &amp;quot;is_outdated&amp;quot;: null,
+            &amp;quot;key_name&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;kms_encrypted_password&amp;quot;: null,
+            &amp;quot;kms_encryption_context&amp;quot;: null,
+            &amp;quot;password&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;period&amp;quot;: null,
+            &amp;quot;period_unit&amp;quot;: null,
+            &amp;quot;private_ip&amp;quot;: &amp;quot;10.100.0.169&amp;quot;,
+            &amp;quot;public_ip&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;renewal_status&amp;quot;: null,
+            &amp;quot;resource_group_id&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;role_name&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;security_enhancement_strategy&amp;quot;: null,
+            &amp;quot;security_groups&amp;quot;: [
+              &amp;quot;sg-bp14pij6g7sjmn9bz92a&amp;quot;
+            ],
+            &amp;quot;spot_price_limit&amp;quot;: 0,
+            &amp;quot;spot_strategy&amp;quot;: &amp;quot;NoSpot&amp;quot;,
+            &amp;quot;status&amp;quot;: &amp;quot;Running&amp;quot;,
+            &amp;quot;subnet_id&amp;quot;: &amp;quot;vsw-bp1c966jdtiw1qwh2tng8&amp;quot;,
+            &amp;quot;system_disk_auto_snapshot_policy_id&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;system_disk_category&amp;quot;: &amp;quot;cloud_efficiency&amp;quot;,
+            &amp;quot;system_disk_description&amp;quot;: null,
+            &amp;quot;system_disk_name&amp;quot;: null,
+            &amp;quot;system_disk_performance_level&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;system_disk_size&amp;quot;: 40,
+            &amp;quot;tags&amp;quot;: {},
+            &amp;quot;timeouts&amp;quot;: {
+              &amp;quot;create&amp;quot;: null,
+              &amp;quot;delete&amp;quot;: null,
+              &amp;quot;update&amp;quot;: null
+            },
+            &amp;quot;user_data&amp;quot;: &amp;quot;&amp;quot;,
+            &amp;quot;volume_tags&amp;quot;: {},
+            &amp;quot;vswitch_id&amp;quot;: &amp;quot;vsw-bp1c966jdtiw1qwh2tng8&amp;quot;
+          },
+          &amp;quot;sensitive_attributes&amp;quot;: [],
+          &amp;quot;private&amp;quot;: &amp;quot;eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6MTIwMDAwMDAwMDAwMCwidXBkYXRlIjo2MDAwMDAwMDAwMDB9LCJzY2hlbWFfdmVyc2lvbiI6IjAifQ==&amp;quot;
+        }
+      ]
+    }
+  ]
+}
+# terraform show
+# alicloud_instance.test999:
+resource &amp;quot;alicloud_instance&amp;quot; &amp;quot;test999&amp;quot; {
+    availability_zone          = &amp;quot;cn-hangzhou-i&amp;quot;
+    deletion_protection        = false
+    host_name                  = &amp;quot;iZbp1etiv4002h9q27lb97Z&amp;quot;
+    id                         = &amp;quot;i-bp1etiv4002h9q27lb97&amp;quot;
+    image_id                   = &amp;quot;ubuntu_18_04_64_20G_alibase_20190624.vhd&amp;quot;
+    instance_charge_type       = &amp;quot;PostPaid&amp;quot;
+    instance_name              = &amp;quot;wanzi_tf001&amp;quot;
+    instance_type              = &amp;quot;ecs.s6-c1m2.small&amp;quot;
+    internet_charge_type       = &amp;quot;PayByTraffic&amp;quot;
+    internet_max_bandwidth_in  = -1
+    internet_max_bandwidth_out = 0
+    private_ip                 = &amp;quot;10.100.0.169&amp;quot;
+    security_groups            = [
+        &amp;quot;sg-bp14pij6g7sjmn9bz92a&amp;quot;,
+    ]
+    spot_price_limit           = 0
+    spot_strategy              = &amp;quot;NoSpot&amp;quot;
+    status                     = &amp;quot;Running&amp;quot;
+    subnet_id                  = &amp;quot;vsw-bp1c966jdtiw1qwh2tng8&amp;quot;
+    system_disk_category       = &amp;quot;cloud_efficiency&amp;quot;
+    system_disk_size           = 40
+    tags                       = {}
+    volume_tags                = {}
+    vswitch_id                 = &amp;quot;vsw-bp1c966jdtiw1qwh2tng8&amp;quot;
+
+    timeouts {}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;terraform资源关系绘图&#34;&gt;terraform资源关系绘图&lt;/h3&gt;
+&lt;p&gt;每个模板定义的资源之间都存在不同程度的关系，terraform graph可以绘制资源关系大图，如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform graph
+digraph {
+        compound = &amp;quot;true&amp;quot;
+        newrank = &amp;quot;true&amp;quot;
+        subgraph &amp;quot;root&amp;quot; {
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; [label = &amp;quot;alicloud_instance.wanzi_test&amp;quot;, shape = &amp;quot;box&amp;quot;]
+                &amp;quot;[root] alicloud_security_group.default (expand)&amp;quot; [label = &amp;quot;alicloud_security_group.default&amp;quot;, shape = &amp;quot;box&amp;quot;]
+                &amp;quot;[root] alicloud_security_group_rule.allow_all_tcp (expand)&amp;quot; [label = &amp;quot;alicloud_security_group_rule.allow_all_tcp&amp;quot;, shape = &amp;quot;box&amp;quot;]
+                &amp;quot;[root] alicloud_vpc.vpc (expand)&amp;quot; [label = &amp;quot;alicloud_vpc.vpc&amp;quot;, shape = &amp;quot;box&amp;quot;]
+                &amp;quot;[root] alicloud_vswitch.vsw (expand)&amp;quot; [label = &amp;quot;alicloud_vswitch.vsw&amp;quot;, shape = &amp;quot;box&amp;quot;]
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot; [label = &amp;quot;provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot;, shape = &amp;quot;diamond&amp;quot;]
+                &amp;quot;[root] var.alicloud_access_key&amp;quot; [label = &amp;quot;var.alicloud_access_key&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.alicloud_secret_key&amp;quot; [label = &amp;quot;var.alicloud_secret_key&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.availability_zone&amp;quot; [label = &amp;quot;var.availability_zone&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.disk_category&amp;quot; [label = &amp;quot;var.disk_category&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.disk_size&amp;quot; [label = &amp;quot;var.disk_size&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.ecs_password&amp;quot; [label = &amp;quot;var.ecs_password&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.ecs_type&amp;quot; [label = &amp;quot;var.ecs_type&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.image_id&amp;quot; [label = &amp;quot;var.image_id&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.internet_charge_type&amp;quot; [label = &amp;quot;var.internet_charge_type&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.internet_max_bandwidth_out&amp;quot; [label = &amp;quot;var.internet_max_bandwidth_out&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] var.region&amp;quot; [label = &amp;quot;var.region&amp;quot;, shape = &amp;quot;note&amp;quot;]
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_security_group.default (expand)&amp;quot;
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_vswitch.vsw (expand)&amp;quot;
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] var.disk_category&amp;quot;
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] var.ecs_password&amp;quot;
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] var.ecs_type&amp;quot;
+                &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot; -&amp;gt; &amp;quot;[root] var.image_id&amp;quot;
+                &amp;quot;[root] alicloud_security_group.default (expand)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_vpc.vpc (expand)&amp;quot;
+                &amp;quot;[root] alicloud_security_group_rule.allow_all_tcp (expand)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_security_group.default (expand)&amp;quot;
+                &amp;quot;[root] alicloud_vpc.vpc (expand)&amp;quot; -&amp;gt; &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot;
+                &amp;quot;[root] alicloud_vswitch.vsw (expand)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_vpc.vpc (expand)&amp;quot;
+                &amp;quot;[root] alicloud_vswitch.vsw (expand)&amp;quot; -&amp;gt; &amp;quot;[root] var.availability_zone&amp;quot;
+                &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot;
+                &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_security_group_rule.allow_all_tcp (expand)&amp;quot;
+                &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot; -&amp;gt; &amp;quot;[root] var.disk_size&amp;quot;
+                &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot; -&amp;gt; &amp;quot;[root] var.internet_charge_type&amp;quot;
+                &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot; -&amp;gt; &amp;quot;[root] var.internet_max_bandwidth_out&amp;quot;
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;] (close)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_instance.wanzi_test (expand)&amp;quot;
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;] (close)&amp;quot; -&amp;gt; &amp;quot;[root] alicloud_security_group_rule.allow_all_tcp (expand)&amp;quot;
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot; -&amp;gt; &amp;quot;[root] var.alicloud_access_key&amp;quot;
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot; -&amp;gt; &amp;quot;[root] var.alicloud_secret_key&amp;quot;
+                &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;]&amp;quot; -&amp;gt; &amp;quot;[root] var.region&amp;quot;
+                &amp;quot;[root] root&amp;quot; -&amp;gt; &amp;quot;[root] meta.count-boundary (EachMode fixup)&amp;quot;
+                &amp;quot;[root] root&amp;quot; -&amp;gt; &amp;quot;[root] provider[\&amp;quot;registry.terraform.io/aliyun/alicloud\&amp;quot;] (close)&amp;quot;
+        }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;该命令的结果还可以通过命令 terraform graph | dot -Tsvg &amp;gt; graph.svg 直接导出为一张图片（需要提前安装graphviz： brew install graphviz ）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform graph | dot -Tsvg &amp;gt; ~/Downloads/graph.svg
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;查看graph.svg可以看到各个资源之间关系图谱：&lt;/p&gt;
+&lt;h2 id=&#34;terraform命令之state管理&#34;&gt;terraform命令之State管理&lt;/h2&gt;
+&lt;h3 id=&#34;查看当前state里存放所有资源&#34;&gt;查看当前state里存放所有资源&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# terraform state list
+alicloud_instance.wanzi_test
+alicloud_security_group.default
+alicloud_security_group_rule.allow_all_tcp
+alicloud_vpc.vpc
+alicloud_vswitch.vsw
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看某一个resource具体数据&#34;&gt;查看某一个resource具体数据&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# terraform state show alicloud_vswitch.vsw
+# alicloud_vswitch.vsw:
+resource &amp;quot;alicloud_vswitch&amp;quot; &amp;quot;vsw&amp;quot; {
+    availability_zone = &amp;quot;cn-hangzhou-i&amp;quot;
+    cidr_block        = &amp;quot;10.100.0.0/24&amp;quot;
+    id                = &amp;quot;vsw-bp1wgpgz9z8y2lfsl2beo&amp;quot;
+    vpc_id            = &amp;quot;vpc-bp1kulcyygsi727aay4hd&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;移除特定资源&#34;&gt;移除特定资源&lt;/h3&gt;
+&lt;p&gt;terraform state rm &amp;lt;资源类型&amp;gt;.&amp;lt;资源名称&amp;gt;
+state rm 命令用于将state中的某个资源移除，但是实际上并不会真正删除这个资源，另外也可以通过import操作从云端恢复到本地。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform state rm  alicloud_security_group.default
+Removed alicloud_security_group.default
+Successfully removed 1 resource instance(s).
+# terraform state list
+alicloud_instance.wanzi_test
+alicloud_vpc.vpc
+alicloud_vswitch.vsw
+# terraform import alicloud_security_group.default sg-bp11s5pka9pxtj6pn4xq
+alicloud_security_group.default: Importing from ID &amp;quot;sg-bp11s5pka9pxtj6pn4xq&amp;quot;...
+alicloud_security_group.default: Import prepared!
+  Prepared alicloud_security_group for import
+alicloud_security_group.default: Refreshing state... [id=sg-bp11s5pka9pxtj6pn4xq]
+
+Import successful!
+
+The resources that were imported are shown above. These resources are now in
+your Terraform state and will henceforth be managed by Terraform.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;刷新资源&#34;&gt;刷新资源&lt;/h3&gt;
+&lt;p&gt;terraform refresh刷新当前state内容，调用云API拉取最新数据写入state文件&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# terraform refresh
+alicloud_vpc.vpc: Refreshing state... [id=vpc-bp1kulcyygsi727aay4hd]
+alicloud_vswitch.vsw: Refreshing state... [id=vsw-bp1wgpgz9z8y2lfsl2beo]
+alicloud_security_group.default: Refreshing state... [id=sg-bp11s5pka9pxtj6pn4xq]
+alicloud_instance.wanzi_test: Refreshing state... [id=i-bp1gt9mb9asadff9r2zr]
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>自动化编排工具Terraform介绍</title>
+      <link>https://wnote.com/post/devops-terraform-about/</link>
+      <pubDate>Wed, 24 Feb 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/devops-terraform-about/</guid>
+      
+        <description>&lt;h2 id=&#34;terraform是什么&#34;&gt;Terraform是什么？：&lt;/h2&gt;
+&lt;p&gt;Terraform是由HashiCorp公司在2014年左右推出的开源资源编排工具, 目前几乎所有的主流云服务商都支持Terraform，包括阿里云、腾讯云、华为云、AWS、Azure、百度云等等。目前很多公司都基于terraform构建自己的基础架构。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;诞生背景：
+传统运维模式下，业务上线需经过设备采购，机器上架，网络环境搭建和系统安装等准备阶段。随着云计算的兴起，各大公有云厂商均提供了非常友好的交互界面，用户借助一个浏览器就可以按需采购各种云资源，快速实现业务架构的搭建。然而，随着业务架构的不断扩展，云资源采购的规模和种类也在持续增加。当用户需要快速采购大量不同类型的云资源时，云管理页面间大量的交互操作反而降低了云资源的采购效率。在阿里云控制台上初始化一个经典的VPC网络架构，从创建VPC、交换机VSwitch到创建Nat网关、弹性IP再到配置路由等工作，大概要花费20分钟甚至更久。同时，工作成果的不可复制性，带来的是跨Region和跨云平台场景下的重复劳动。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;事实上，对业务运维人员而言，只关心对资源的配置，无需关心这些资源的创建步骤。如同喝咖啡，只需要告诉服务员喝什么，加不加冰等就够了。如果有一份完整的云资源采购清单，这张清单清楚的记录了所需要购买的云资源的种类，规格，数量以及各云资源之间的关系，然后一键完成购买，并且当业务需求发生变化时，只需要变更清单就可以实现对云资源的快速变更，那么效率就会提高很多。在云计算中这被称作资源编排，目前很多云平台也提供了资源编排的能力，如阿里云的ROS，AWS的CloudFormation等。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;将云资源、服务或者操作步骤以代码的形式定义在模板中，借助编排引擎，实现资源的自动化管理，这就是基础设施即代码（Infrastructure as Code，简称IaC），也是资源编排最高效的实现模式。然而，多种云编排服务带来的是高昂的学习成本、低效的代码复用率和复杂的多云协同工作流程。每一种服务仅限于管理自家的单一云平台上，无法满足对多个云平台，多种层级（如IaaS，PaaS）资源的统一管理。如何解决如上问题，是否可以使用统一的编排工具，共用一套语法实现对包括阿里云在内的多云的统一管理呢？所以这个时候就诞生Terraform，来解决这些问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;terrafrom功能和作用&#34;&gt;Terrafrom功能和作用：&lt;/h2&gt;
+&lt;h3 id=&#34;功能点&#34;&gt;功能点&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;IaC：infrastructure as code，用代码管理基础设施&lt;/li&gt;
+&lt;li&gt;执行计划：显示terraform apply时执行的操作&lt;/li&gt;
+&lt;li&gt;资源图：构建所有资源的图形&lt;/li&gt;
+&lt;li&gt;变更自动化：基于执行计划和资源图，可以清晰知道要变更的内容和顺序
+总结：terraform用于各类基础设施资源初始化，支持多种云平台，支持第三方服务对接&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;作用&#34;&gt;作用&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;使用不同provider的API，包装抽象成Terraform的标准代码结构&lt;/li&gt;
+&lt;li&gt;用户不需要了解每个云计算厂商的API细节，降低了部署难度&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;terraform架构&#34;&gt;Terraform架构&lt;/h2&gt;
+&lt;p&gt;Terraform本身是基于插件的架构，可扩展性很强，可以方便程序员对Terraform进行扩展。Terraform从逻辑上可以分为两层，核心层（Terraform Core）和插件层（Terraform Provider）。&lt;/p&gt;
+&lt;h3 id=&#34;核心层&#34;&gt;核心层&lt;/h3&gt;
+&lt;p&gt;核心层其实就是terraform的命令行工具，它是用go语言开发的，它负责：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;读取.tf配置，进行变量替换&lt;/li&gt;
+&lt;li&gt;资源状态文件管理&lt;/li&gt;
+&lt;li&gt;分析资源关系，绘制图谱&lt;/li&gt;
+&lt;li&gt;依赖关系图谱，创建资源
+根据依赖关系，创建资源；对于没有依赖关系的资源，会并行进行创建(缺省10个并行进程），这也是Terraform能够高效快速管理云资源的原因。&lt;/li&gt;
+&lt;li&gt;用RPC调用插件层&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;插件层&#34;&gt;插件层&lt;/h3&gt;
+&lt;p&gt;插件层也是由go语言开发的，Terraform有超过250个不同的插件，它们负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;接受核心层的RPC调用&lt;/li&gt;
+&lt;li&gt;具体提供某一项服务的执行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;插件层又有两种：&lt;/p&gt;
+&lt;h4 id=&#34;provider&#34;&gt;Provider&lt;/h4&gt;
+&lt;p&gt;Provider，负责与外界API的集成，比如阿里云Provider就提供了在阿里云创建、修改、删除云资源的功能。这个插件负责和阿里云云API的接口交互，并提供一层抽象，这样程序员可以在不了解API细节的情况下，通过terraform来编排资源。它负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;始化以及外界API通信&lt;/li&gt;
+&lt;li&gt;外界API的认证&lt;/li&gt;
+&lt;li&gt;定义云资源与外界服务的关系&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;比如常见provider:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;阿里云： https://github.com/aliyun/terraform-provider-alicloud
+百度云：https://github.com/baidubce/terraform-provider-baiducloud
+腾讯云：https://github.com/tencentcloudstack/terraform-provider-tencentcloud
+华为云：https://github.com/huaweicloud/terraform-provider-huaweicloud
+ucloud：https://github.com/ucloud/terraform-provider-ucloud
+qingcloud：https://github.com/yunify/terraform-provider-qingcloud
+AWS：https://github.com/hashicorp/terraform-provider-aws
+Azure：https://github.com/terraform-providers/terraform-provider-azurerm
+GoogleCloud：https://github.com/hashicorp/terraform-provider-google
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;provisioner&#34;&gt;Provisioner&lt;/h4&gt;
+&lt;p&gt;Provisioner，负责在资源创建或者删除完成后，执行一些脚本。比如Puppet Provisioner就可以在云虚拟机资源创建完成后，在该资源上下载、安装、配置Puppet agent。&lt;/p&gt;
+&lt;p&gt;为了方便理解,网络上找了一个组件架构图，简单说明各个组件位置：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2021/terraform-about.png&#34; alt=&#34;terraform架构图&#34;&gt;&lt;/p&gt;
+&lt;p&gt;对于terraform日常操作，我画了一个基本workflow流程图如下：
+&lt;img src=&#34;https://wnote.com/images/2021/terraform-workflow.png&#34; alt=&#34;terraform操作流程图&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;terraform关键字解释&#34;&gt;terraform关键字解释：&lt;/h2&gt;
+&lt;h3 id=&#34;声明式语言hcl&#34;&gt;声明式语言（HCL）：&lt;/h3&gt;
+&lt;p&gt;Terraform是通过HashiCorp Configuration Language来编写代码的，HCL是声明式的，也就是说，程序员用HCL来描述整个基础架构应该是什么样的，然后把具体的实施工作交给Terraform就可以了，程序员不需要了解实施的具体步骤和细节，不需要了解terraform如何与云服务商的API进行对接。Terraform会根据代码，自动下载相应的Provider和Provisioner来负责具体步骤和细节。于声明式对应的是命令式。命令式语言是按照步骤执行的，先后顺序很重要，对固定输入执行命令式语言会得到固定的输出。声明式和命令式并无高下之分，只是在云资源编排这一领域，声明式会比较方便实现。我们日常见到的云资源编排工具都是声明式的，包括AWS CloudFormation、Azure Resource Template、Google Cloud Deoplyment Manager。大家如果通过调用腾讯云API来在腾讯云上实施资源编排，那通常就是命令式的。&lt;/p&gt;
+&lt;h3 id=&#34;资源状态文件state&#34;&gt;资源状态文件(state)&lt;/h3&gt;
+&lt;p&gt;Terraform初始化以后，会生成一个状态文件，该状态文件记录了最近一次操作的时间、各资源的相关属性、各变量的当前值、状态文件的版本、等等。&lt;/p&gt;
+&lt;p&gt;下一次再操作的时候，terraform首先会把当前状态文件与云服务商上的状态进行一次更新，找出是否后有被删除或者更改了的资源，然后再根据.tf文件，决定那些资源需要删除、更新、创建。操作完成后，会重新生成一个状态文件。&lt;/p&gt;
+&lt;h3 id=&#34;terraform后台backend&#34;&gt;Terraform后台(backend)&lt;/h3&gt;
+&lt;p&gt;资源状态文件的完整性比较重要，对于这些文件我们至少需要做到在操作开始时自动加锁，直到操作结束，这样别人无法更改；另外还需要对资源版本变更进行跟踪；对资源文件里敏感信息进行访问控制。&lt;/p&gt;
+&lt;p&gt;因此backend跟资源状态文件如何读取、存储、锁定，以及terraform apply如何执行严密相关。&lt;/p&gt;
+&lt;p&gt;terraform缺省使用本地后台，也就是说，状态文件会存放在当前目录下，terraform代码的执行也在本地虚拟机运行。这对一个人管理的云资源是没有问题的，但当团队人员数目加多以后，大家可能都有自己的工作台，但是需要一个共有的地方来存储资源状态文件。这是后就可以用到远程存储。目前terraform支持多种远程存储后台，包括AWS s3,Hashicorp Consul,etcd，Terraform云，以及terraform企业版等等，这些远程后台都提供在远程存储、锁定状态文件。其中terraform企业版提供远程运行terraform，以及其他一些企业级特性。&lt;/p&gt;
+&lt;h3 id=&#34;terraform模块module&#34;&gt;Terraform模块(module)&lt;/h3&gt;
+&lt;p&gt;Terraform模块就是把一些高度可重用的代码写成模块，方便其他人使用。模块由输入参数、输出参数以及主逻辑组成。这就跟传统编程语言里的函数很像。Terraform提供了公开的模块注册器，模块编写完成以后，只要符合规范，就可以发布到模块注册器中让大家使用。https://registry.terraform.io/&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>ArgoCD配合Jenkins Pipeline自动化部署应用</title>
+      <link>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</link>
+      <pubDate>Wed, 29 Jul 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</guid>
+      
+        <description>&lt;h2 id=&#34;创建helm仓库&#34;&gt;创建helm仓库&lt;/h2&gt;
+&lt;p&gt;首先，创建基础Helm模版仓库：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;helm create template .
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于实际的部署中，需要根据自己的业务定制自己的helm模版，我这里直接使用我们内部自定义的通用模版，方便快速部署;另外也可以参考bitnami家维护的helm chart(&lt;a href=&#34;https://github.com/bitnami/charts/tree/master/bitnami&#34;&gt;https://github.com/bitnami/charts/tree/master/bitnami&lt;/a&gt;)&lt;/p&gt;
+&lt;h2 id=&#34;jenkins凭证配置argocd-token信息&#34;&gt;jenkins凭证配置argocd token信息&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-001.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;配置jenkins-pipeline编写&#34;&gt;配置jenkins pipeline编写&lt;/h2&gt;
+&lt;p&gt;这里我们以gotest项目(&lt;a href=&#34;https://code.test.cn/hqliang/gotest&#34;&gt;https://code.test.cn/hqliang/gotest&lt;/a&gt;)为例&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pipeline {
+    environment {
+    GOPROXY = &amp;quot;http://repo.test.cn/repository/goproxy/&amp;quot;
+    HUB_URL = &amp;quot;registry.test.cn&amp;quot;
+        ARGOCD_SERVER=&amp;quot;qacd.test.cn&amp;quot;
+    ARGOCD_PROJ=&amp;quot;test-project&amp;quot;
+        ARGOCD_APP=&amp;quot;gotest&amp;quot;
+    ARGOCD_REPO=&amp;quot;https://code.test.cn/devops/cicd/qa.git&amp;quot;
+    ARGOCD_PATH=&amp;quot;devops/gotest&amp;quot;
+    ARGOCD_CLUSTER=&amp;quot;https://172.16.19.250:8443&amp;quot;
+        ARGOCD_NS=&amp;quot;default&amp;quot;
+    }
+ 
+    agent {
+        node {
+            label &#39;aiops&#39;
+        }
+    }
+ 
+    stages {      
+        stage (&#39;Docker_Build&#39;) {
+            steps {
+        withCredentials([[$class: &#39;UsernamePasswordMultiBinding&#39;,
+                credentialsId: &#39;12ff2942-972c-4df3-8d2d-2cfcb25e00de&#39;,
+                usernameVariable: &#39;DOCKER_HUB_USER&#39;,
+                passwordVariable: &#39;DOCKER_HUB_PASSWORD&#39;]]) {
+                sh &#39;&#39;&#39;
+                TAG=$(git describe --tags  `git rev-list --tags --max-count=1`)
+                            docker login registry.test.cn -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
+                            make docker-all VERSION=$TAG
+                    &#39;&#39;&#39;
+            }
+            }
+        }
+ 
+        stage (&#39;Deploy_K8S&#39;) {
+             steps {
+                     withCredentials([string(credentialsId: &amp;quot;qa-argocd&amp;quot;, variable: &#39;ARGOCD_AUTH_TOKEN&#39;)]) {
+                        sh &#39;&#39;&#39;
+            TAG=$(git describe --tags  `git rev-list --tags --max-count=1`)
+            # create app
+            ARGOCD_SERVER=$ARGOCD_SERVER argocd --grpc-web app create $ARGOCD_APP --project $ARGOCD_PROJ --repo $ARGOCD_REPO --path $ARGOCD_PATH --dest-namespace  $ARGOCD_NS --dest-server $ARGOCD_CLUSTER --upsert --insecure
+                        # deploy app
+                        ARGOCD_SERVER=$ARGOCD_SERVER argocd --grpc-web app set $ARGOCD_APP -p containers.tag=$TAG  --insecure
+                        # Deploy to ArgoCD
+                        ARGOCD_SERVER=$ARGOCD_SERVER argocd --grpc-web app sync $ARGOCD_APP  --force --insecure
+                        ARGOCD_SERVER=$ARGOCD_SERVER argocd --grpc-web app wait $ARGOCD_APP  --timeout 600 --insecure
+                        &#39;&#39;&#39;
+               }
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置gitlab-webhook触发jenkins&#34;&gt;配置gitlab webhook触发Jenkins&lt;/h2&gt;
+&lt;h3 id=&#34;jenkins配置触发构建&#34;&gt;jenkins配置触发构建&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-002.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;gitlab配置webhook&#34;&gt;gitlab配置webhook&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-003.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;推送tag到远端分支&#34;&gt;推送tag到远端分支&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-004.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;h3 id=&#34;jenkins-pipeline构建&#34;&gt;jenkins pipeline构建&lt;/h3&gt;
+&lt;p&gt;到jenkins查看pipeline构建结果如下：&lt;/p&gt;
+&lt;p&gt;docker自动打包并推送到harbor上
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-005.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;p&gt;创建Argo应用并同步部署到k8s集群
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-006.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;p&gt;最后查看同步状态，途中说明已经正常发布到k8s集群：
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-007.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;p&gt;我们到argocd的dashboard看一下应用流程图，应用各个组件已经正常运行。
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-008.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;p&gt;通过kubectl获取已经创建好的资源：
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-009.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;p&gt;最后验证一下业务是否可以访问呢，访问http://gotest.test.cn/df 即可查看容器磁盘空间&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-jenkins-010.png&#34; alt=&#34;argocd and jenkins&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;总结优化&#34;&gt;总结&amp;amp;优化&lt;/h2&gt;
+&lt;p&gt;无论通过jenkins的pipeline还是通过gitlab CI我们都可以更好的整合argocd,最终实现一键部署业务应用.&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>argocd部署deployment出现: no space left on device</title>
+      <link>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</link>
+      <pubDate>Mon, 18 May 2020 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-error-no-space-left-on-device/</guid>
+      
+        <description>&lt;h1 id=&#34;故障现象&#34;&gt;故障现象&lt;/h1&gt;
+&lt;p&gt;上午通过argocd部署几个业务应用，部署了2个以后，第三方死活部署不成功，相同的配置，知识集群不一样，怎么会出现这样的问题呢？&lt;/p&gt;
+&lt;p&gt;于是查看了下日志,如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;  Warning  Failed     1m                kubelet, 172.16.25.13  Error: Error response from daemon: error creating overlay mount to /var/lib/docker/overlay2/ba37165607862efb350093e5e287207e2547759fd81dc4e5e356a86ac5e28324-init/merged: no space left on device
+  Warning  Failed     1m                kubelet, 172.16.25.13  Error: Error response from daemon: error creating overlay mount to /var/lib/docker/overlay2/f69b62f360fc2a94487aca041b08d0929810beab0602e0ec8b90c94b2e893337-init/merged: no space left on device
+  Warning  Failed     48s               kubelet, 172.16.25.13  Error: Error response from daemon: error creating overlay mount to /var/lib/docker/overlay2/a8d20a44183b39ae989eee8a442960124ff23844482f726ea7ab39a292aecbb3-init/merged: no space left on device
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;解决方法&#34;&gt;解决方法&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;排查磁盘空间,发现没有满&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;root@gpu613:~# df -Th /
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/sda2      ext4  1.8T  359G  1.3T  22% /
+&lt;/code&gt;&lt;/pre&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;经过谷歌，发现可能是inotify watch 耗尽导致&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;#cat /proc/sys/fs/inotify/max_user_watches
+8192
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;尝试修改fd watch的目录数量&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;echo &amp;quot;fs.inotify.max_user_watches=100000&amp;quot; &amp;gt;&amp;gt; /etc/sysctl.conf
+sysctl -p
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新发送argocd sync同步应用，发现这次成功创建了deployment,果真是这货的原因.&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>ArgoCD添加多集群</title>
+      <link>https://wnote.com/post/cicd-argocd-add-clusters/</link>
+      <pubDate>Tue, 05 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-add-clusters/</guid>
+      
+        <description>&lt;h2 id=&#34;生成argocd管理用户token&#34;&gt;生成argocd管理用户token&lt;/h2&gt;
+&lt;p&gt;登陆dashboard，settings&amp;ndash;&amp;gt;Accounts&amp;ndash;&amp;gt;admin&amp;ndash;&amp;gt;Generate New
+生成后，请记录下token信息，类似如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fyJhbGciOiJ3UzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2OWI0M2M0Mi01MmZiLTRlZmItODIxOC0yOWU3NGM5MWI0NDIiLCJpYXQiOjE1OTUzMTEx3zQsImlzcyI6ImFyZ29jZCIsIm5iZiI6MTU5NTMxMTE3NCwic3ViIjoib3duZXIifQ.9u4XzArEeaz7G2Q2TWusnTkakEmq9BYDAUHr3dC6wG5
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置argocd-config&#34;&gt;配置argocd config&lt;/h2&gt;
+&lt;p&gt;对于开启了https认证的argocd在添加集群的时候比较鸡肋，需要登陆到server端POD里进行配置，具体如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# cat ~/.argocd/config
+contexts:
+- name: argocd-server.argocd
+  server: qacd.test.cn
+  user: argocd-server.argocd
+current-context: argocd-server.argocd
+servers:
+- grpc-web-root-path: &amp;quot;&amp;quot;
+  insecure: true
+  server: qacd.test.cn
+users:
+- auth-token: xxxxxx #这里就是第一步生成token信息
+  name: argocd-server.argocd
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置kubeconfig&#34;&gt;配置kubeconfig&lt;/h2&gt;
+&lt;p&gt;具体配置这里忽略，请参考以往文档，前提要能访问集群并且是集群管理员，这里配置CONTEXT为idc-bj-k8s&lt;/p&gt;
+&lt;h2 id=&#34;添加集群&#34;&gt;添加集群&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;#argocd  --grpc-web cluster  add  idc-bj-k8s  --kubeconfig ~/.kube/config
+INFO[0000] ServiceAccount &amp;quot;argocd-manager&amp;quot; already exists in namespace &amp;quot;kube-system&amp;quot;
+INFO[0000] ClusterRole &amp;quot;argocd-manager-role&amp;quot; updated
+INFO[0000] ClusterRoleBinding &amp;quot;argocd-manager-role-binding&amp;quot; updated
+Cluster &#39;https://172.16.16.250:8443&#39; added
+#argocd --grpc-web cluster list
+SERVER                          NAME        VERSION  STATUS      MESSAGE
+https://172.16.16.250:8443      idc-bj-k8s  1.14     Successful
+https://kubernetes.default.svc              1.14     Successful
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;目前看北京idc集群已经添加到argocd里,后边就可以往集群里部署应用啦啦&lt;/p&gt;
+&lt;h2 id=&#34;删除集群&#34;&gt;删除集群&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;#argocd --grpc-web  cluster rm https://172.16.16.250:8443
+#argocd --grpc-web cluster list
+SERVER                          NAME        VERSION  STATUS      MESSAGE
+https://kubernetes.default.svc              1.14     Successful
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>ArgoCD安部部署</title>
+      <link>https://wnote.com/post/cicd-argocd-install-in-k8s/</link>
+      <pubDate>Fri, 01 May 2020 15:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argocd-install-in-k8s/</guid>
+      
+        <description>&lt;h2 id=&#34;安装部署&#34;&gt;安装部署&lt;/h2&gt;
+&lt;p&gt;ArgoCD的部署非常简单，安装官方的部署方法(HA模式：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v1.5.2/manifests/ha/install.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可以按照需求调整部署文件，待pod顺利启动后&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl  -n argocd get pod
+NAME                                             READY   STATUS    RESTARTS   AGE
+argocd-application-controller-66fbf66657-ghf2c   1/1     Running   0          6d17h
+argocd-application-controller-66fbf66657-gpm7d   1/1     Running   0          6d17h
+argocd-application-controller-66fbf66657-tr5kd   1/1     Running   0          6d17h
+argocd-dex-server-5c5f986596-c8ftv               1/1     Running   0          9d
+argocd-redis-ha-haproxy-69c6df79c6-2fxd6         1/1     Running   0          9d
+argocd-redis-ha-haproxy-69c6df79c6-mksg2         1/1     Running   0          9d
+argocd-redis-ha-haproxy-69c6df79c6-wq57f         1/1     Running   0          9d
+argocd-redis-ha-server-0                         2/2     Running   0          9d
+argocd-redis-ha-server-1                         2/2     Running   0          9d
+argocd-redis-ha-server-2                         2/2     Running   0          9d
+argocd-repo-server-76bbb56cc7-d8fp5              1/1     Running   0          7d
+argocd-repo-server-76bbb56cc7-qvl5z              1/1     Running   0          7d
+argocd-repo-server-76bbb56cc7-xqrfn              1/1     Running   0          7d
+argocd-server-6464c7bcd-fgktr                    1/1     Running   0          6d19h
+argocd-server-6464c7bcd-jkqdb                    1/1     Running   0          6d19h
+argocd-server-6464c7bcd-nfdwn                    1/1     Running   0          6d19h
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置ingress访问argocd&#34;&gt;配置ingress访问argocd&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+spec:
+  rules:
+    - host: cd.testcn
+      http:
+        paths:
+        - backend:
+            serviceName: argocd-server
+            servicePort: https
+          path: /
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过https://cd.test.cn/访问argocd，默认本地用户名是admin，密码是其中一个pod的name，获取密码使用如下方法：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d&#39;/&#39; -f 2
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-001.jpeg&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;用户管理&#34;&gt;用户管理&lt;/h2&gt;
+&lt;p&gt;argocd默认使用本地用户，可以支持ldap。本地用户管理使用修改argocd-cm这个configmap方式，新增用户如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+  name: argocd-cm
+  namespace: argocd
+data:
+  accounts.chlai: apiKey,login  #允许用户login和生成aipkey
+  users.anonymous.enabled: &amp;quot;true&amp;quot;  #允许匿名用户登陆。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改完保存立即生效。&lt;/p&gt;
+&lt;p&gt;系统默认的role有readonly和admin两个，授予用户admin的权限方法是修改argocd-rbac-cm这个configmap：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+  name: argocd-rbac-cm
+  namespace: argocd
+data:
+  policy.csv: |-
+    g, chlai, role:admin
+  policy.default: role:readonly  #匿名登陆默认使用readonly角色。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;生成登陆密码需要使用admin用户cli方式login server，通过argocd account update-password命令修改：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;argocd login &amp;lt;argocd-server&amp;gt;
+argocd account list
+argocd account update-password \
+  --account &amp;lt;name&amp;gt; \
+  --current-password &amp;lt;current-admin&amp;gt; \
+  --new-password &amp;lt;new-user-password&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用新的用户密码登陆argocd web ui。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-002.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;argocd-ui界面来创建应用&#34;&gt;ArgoCD UI界面来创建应用&lt;/h2&gt;
+&lt;p&gt;点击“+ NEW APP”按钮创建应用；
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-003.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;填写应用名称：guestbook；项目：default；同步策略：手动；&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-004.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;配置来源。这里配置的是Git ，代码仓库的URL配置为 Github上的项目地址为：https://github.com/argoproj/argocd-example-apps.git；Revision选择：HEAD；项目路径选择：guestbook；&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-005.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;选择应用部署的目标集群：https://kubernetes.default.svc ，因为此次的Argo CD部署在Kubernetes集群当中，默认Argo CD已经帮我们添加好当前所在的Kubernetes集群，直接使用即可。Namespace选择：my-app。Namespcae可以在Kubernetes集群上使用# kubectl create namespace my-app 命令来创建；&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-006.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;填写完成后，点击 “CREATE” 按钮进行创建；&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-007.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;由于尚未部署应用程序，并且尚未创建Kubernetes资源，所以Status还是OutOfSync状态，因此我们还需要点击 “SYNC”按钮进行同步（部署）。同时也可以安装argocd客户端，使用Argo CD CLI进行同步：# argocd app sync guestbook&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-008.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;应用创建完成，处于“未同步”状态，手动同步应用，开始部署应用
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-009.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;等待应用创建完成
+&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-010.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+&lt;p&gt;在Kubernetes集群中查看应用&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2020/argocd-install-011.png&#34; alt=&#34;argocd&#34;&gt;&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>Hugo&#43;Github搭建个人博客</title>
+      <link>https://wnote.com/post/tools-hugo-github-blog/</link>
+      <pubDate>Tue, 10 Mar 2020 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-hugo-github-blog/</guid>
+      
+        <description>&lt;h1 id=&#34;hugo介绍&#34;&gt;Hugo介绍&lt;/h1&gt;
+&lt;p&gt;之前博客一直使用hexo搭建,随着用golang越来越多，一直想把博客也迁移到hugo,hugo就不用多说了go语言编写的静态网站生成器,简单、易用、高效、易扩展、快速部署.&lt;/p&gt;
+&lt;h1 id=&#34;安装hugo&#34;&gt;安装hugo&lt;/h1&gt;
+&lt;p&gt;这里以mac环境为例:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;brew install hugo
+hugo new site wanzi
+cd wanzi
+git clone https://github.com/xianmin/hugo-theme-jane.git --depth=1 themes/jane
+cp -r themes/jane/exampleSite/content ./
+cp themes/jane/exampleSite/config.toml ./
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改config.toml信息为你自己博客信息&lt;/p&gt;
+&lt;p&gt;我网站目录结构如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.
+├── LICENSE
+├── archetypes #存放default.md，头文件格式
+│   └── default.md
+├── config.toml
+├── content #整个网站项目全局配置
+│   ├── about.md
+│   └── post
+├── data #存放数据或配置,可以是json|toml|yaml
+├── layouts #存放的是网站的模板文件
+├── public #hugo编译后生成的静态文件
+│   ├── 404.html
+│   ├── about
+│   ├── atom.xml
+│   ├── categories
+│   ├── css
+│   ├── favicon.ico
+│   ├── fonts
+│   ├── icons
+│   ├── index.html
+│   ├── js
+│   ├── manifest.json
+│   ├── mark
+│   ├── posts
+│   ├── robots.txt
+│   ├── rss.xml
+│   ├── sitemap.xml
+│   └── tags
+├── resources
+│   └── _gen
+├── static #存放图片,css,jss静态资源
+└── themes #存放网站主题
+    └── jane
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;编写文章&#34;&gt;编写文章&lt;/h1&gt;
+&lt;pre&gt;&lt;code&gt;hugo new content/posts/git-commands-base.md
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;推送到github&#34;&gt;推送到github&lt;/h1&gt;
+&lt;pre&gt;&lt;code&gt;cd wanzi/public
+git init 
+git remote add origin https://github.com/iwz2099/wanzi
+echo &amp;quot;wnote.com&amp;quot; &amp;gt; CNAME
+git  add -A
+git commit -m &amp;quot;initialization&amp;quot;
+git push -u origin master
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果使用个人域名,只需要在github仓库下创建CNAME文件写入自己的域名即可，这样访问wnote.com就可以访问自己博客了。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>kubernetes集群添加用户</title>
+      <link>https://wnote.com/post/kubernetes-add-user/</link>
+      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-add-user/</guid>
+      
+        <description>&lt;p&gt;之前通过ansible搭建了kubernetes集群环境,这里需求主要是添加一个用户进行日常管理，并限制到指定的namespace，接下来进行操作：&lt;/p&gt;
+&lt;h1 id=&#34;kubernetes中用户&#34;&gt;kubernetes中用户&lt;/h1&gt;
+&lt;blockquote&gt;
+&lt;p&gt;K8S中有两种用户(User)——服务账号(ServiceAccount)和普通意义上的用户(User), ServiceAccount是由K8S管理的，而User通常是在外部管理，K8S不存储用户列表——也就是说，添加/编辑/删除用户都是在外部进行，无需与K8S API交互，虽然K8S并不管理用户，但是在K8S接收API请求时，是可以认知到发出请求的用户的，实际上，所有对K8S的API请求都需要绑定身份信息(User或者ServiceAccount)，这意味着，可以为User配置K8S集群中的请求权限&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;对于kubernetes接受用户请求的时候通常采取客户端证书、静态token文件、静态密码文件三种方式，这里我们只介绍证书验证。&lt;/p&gt;
+&lt;h1 id=&#34;生成用户证书&#34;&gt;生成用户证书&lt;/h1&gt;
+&lt;p&gt;准备证书生成文件csr,通过kubernetes的ca签发证书,通常k8s api server的ca文件路径为/etc/kubernetes/pki/,这里会生成cicd-admin-key.pem(私钥)和cicd-admin.pem(证书), 具体csr如何生成可以参考：https://wnote.com/post/linux-openssl-issue-private-certificate/&lt;/p&gt;
+&lt;p&gt;这里的csr文件传递的用户名为cicd-admin&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# vim cicd-admin-csr.json
+{
+  &amp;quot;CN&amp;quot;: &amp;quot;cicd-admin&amp;quot;,
+  &amp;quot;hosts&amp;quot;: [],
+  &amp;quot;key&amp;quot;: {
+    &amp;quot;algo&amp;quot;: &amp;quot;rsa&amp;quot;,
+    &amp;quot;size&amp;quot;: 2048
+  },
+  &amp;quot;names&amp;quot;: [
+    {
+      &amp;quot;C&amp;quot;: &amp;quot;CN&amp;quot;,
+      &amp;quot;ST&amp;quot;: &amp;quot;BeiJing&amp;quot;,
+      &amp;quot;L&amp;quot;: &amp;quot;BeiJing&amp;quot;,
+      &amp;quot;O&amp;quot;: &amp;quot;k8s&amp;quot;,
+      &amp;quot;OU&amp;quot;: &amp;quot;System&amp;quot;
+    }
+  ]
+}
+# cd /etc/kubernetes/pki/ 
+# cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes  cicd-admin-csr.json | cfssljson -bare cicd-admin
+# ls -l cicd-admin*
+-rw-r--r-- 1 root root 1001 Dec 19 16:51 cicd-admin.csr
+-rw-r--r-- 1 root root  224 Dec 19 16:50 cicd-admin-csr.json
+-rw------- 1 root root 1675 Dec 19 16:51 cicd-admin-key.pem
+-rw-r--r-- 1 root root 1387 Dec 19 16:51 cicd-admin.pem
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;用户权限控制rbac&#34;&gt;用户权限控制(RBAC)&lt;/h2&gt;
+&lt;h3 id=&#34;创建角色&#34;&gt;创建角色&lt;/h3&gt;
+&lt;p&gt;k8s中rbac的角色主要有两种,普通角色(Role)和集群角色(ClusterRole)，ClusterRole是特殊的Role&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Role属于某个命名空间; 而ClusterRole属于整个集群，包括所有的命名空间&lt;/li&gt;
+&lt;li&gt;ClusterRole能够授予集群范围的权限，比如node资源的管理，可以请求全命名空间的资源(通过指定&amp;ndash;all-namespaces), 默认情况下, K8S内置了一个名为admin的ClusterRole，实际使用中无需创建admin Role&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在cicd的namespace下创建一个role为cicd-admin:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: cicd
+  name: cicd-admin
+rules:
+- apiGroups: [&amp;quot;&amp;quot;]
+  resources: [&amp;quot;*&amp;quot;]
+  verbs: [&amp;quot;*&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;绑定用户到指定角色&#34;&gt;绑定用户到指定角色&lt;/h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;subjects指定账户类型可以是User也可以是service account，这里指定的是用户cicd-admin, roleRef指定RoleBinding引用角色&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: cicd-admin-binding
+  namespace: cicd
+subjects:
+- kind: User
+  name: cicd-admin
+  apiGroup: &amp;quot;&amp;quot;
+roleRef:
+  kind: Role
+  name: admin
+  apiGroup: &amp;quot;&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者通过kubectl进行绑定也可以:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubectl create rolebinding cicd-admin-binding --role=admin --user=cicd-admin --namespace=cicd
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者给用户绑定到默认ClusterRole的admin角色,而这里cicd-admin如果绑定了admin，其权限也只会被限制在cicd的namespace&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: cicd-admin-binding
+  namespace: cicd
+subjects:
+- kind: User
+  name: cicd-admin
+  apiGroup: &amp;quot;&amp;quot;
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: &amp;quot;&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;客户端配置&#34;&gt;客户端配置&lt;/h2&gt;
+&lt;h3 id=&#34;设置集群参数&#34;&gt;设置集群参数&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;export KUBE_APISERVER=&amp;quot;https://cicd-k8s.test.cn:8443&amp;quot;
+kubectl config set-cluster kubernetes \
+--certificate-authority=/etc/kubernetes/ssl/ca.pem \
+--embed-certs=true \
+--server=${KUBE_APISERVER} \
+--kubeconfig=cicd-admin.kubeconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置客户端认证参数&#34;&gt;设置客户端认证参数&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl config set-credentials cicd-admin \
+--client-certificate=/etc/kubernetes/ssl/cicd-admin.pem \
+--client-key=/etc/kubernetes/ssl/cicd-admin-key.pem \
+--embed-certs=true \
+--kubeconfig=cicd-admin.kubeconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置上下文参数&#34;&gt;设置上下文参数&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl config set-context kubernetes \
+--cluster=kubernetes \
+--user=cicd-admin \
+--namespace=cicd \
+--kubeconfig=cicd-admin.kubeconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置默认上下文&#34;&gt;设置默认上下文&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl config use-context kubernetes --kubeconfig=cicd-admin.kubeconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;客户端使用&#34;&gt;客户端使用&lt;/h3&gt;
+&lt;p&gt;将kubeconfig文件覆盖~/.kube/config&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cp cicd-admin.kubeconfig ~/.kube/config
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，kubernetes添加用户并进行授权访问k8s集群的介绍就告一段落。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>kubernetes集群部署traefik2.1</title>
+      <link>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</link>
+      <pubDate>Tue, 17 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</guid>
+      
+        <description>&lt;h2 id=&#34;架构概念&#34;&gt;架构&amp;amp;概念&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2019/routers.png&#34; alt=&#34;traefik v2.1 router&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Traefik2.x版本相比1.7.x架构有很大变化，正如上边这张架构图，最主要的功能是支持了TCP协议、增加了Router概念。&lt;/p&gt;
+&lt;p&gt;这里我们采用在kubernetes集群部署Traefik2.1，业务访问通过haproxy请求到traefik Ingress，下边是搭建过程涉及到一些概念：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;EntryPoints：Traefik的网络入口，定义请求接受的端口(不分http或tcp)&lt;/li&gt;
+&lt;li&gt;CRD：Kubernetes API的扩展&lt;/li&gt;
+&lt;li&gt;IngressRouter：将传入请求转发到可以处理请求的服务，另外转发请求之前可以通过Middlewares动态更新请求&lt;/li&gt;
+&lt;li&gt;Middlewares：请求到达服务之前进行动态处理请求参数，比如header或转发规则等等。&lt;/li&gt;
+&lt;li&gt;TraefikService：如果果CRD定义了了这种类型，IngressRouter可以直接引用，处在IngressRouter和服务之间,类似于Maesh架构，更适合较为复杂场景,一般情况可以不使用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;kubernetes配置&#34;&gt;kubernetes配置&lt;/h2&gt;
+&lt;h3 id=&#34;配置ssl证书&#34;&gt;配置SSL证书&lt;/h3&gt;
+&lt;p&gt;因为业务服务使用https,这里先配置下SSL证书:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubectl -n cattle-system create secret tls tls-rancher-ingress --cert=test.cn.pem  --key=test.cn.key
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置集群访问控制rbac&#34;&gt;配置集群访问控制(RBAC)&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-ingress-controller
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+
+rules:
+  - apiGroups:
+      - &amp;quot;&amp;quot;
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - middlewares
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - ingressroutes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - ingressroutetcps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - tlsoptions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - traefikservices
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-controller
+subjects:
+  - kind: ServiceAccount
+    name: traefik-ingress-controller
+    namespace: kube-system
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;tls参数配置&#34;&gt;TLS参数配置&lt;/h3&gt;
+&lt;p&gt;默认配置TLS1.2,当然也可以使用TLS1.3&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
+kind: TLSOption
+metadata:
+  name: mytlsoption
+  namespace: kube-system
+
+spec:
+  minversion: VersionTLS12
+  snistrict: true
+  ciphersuites:
+    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+    - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;crd配置&#34;&gt;CRD配置&lt;/h2&gt;
+&lt;p&gt;这里定义了IngressRoute、Middleware、TLSOption、IngressRouteTCP、TraefikService,其中TraefikService是在2.1版本新增加的CRD&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutes.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: IngressRoute
+    plural: ingressroutes
+    singular: ingressroute
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: middlewares.traefik.containo.us
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: Middleware
+    plural: middlewares
+    singular: middleware
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlsoptions.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: TLSOption
+    plural: tlsoptions
+    singular: tlsoption
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutetcps.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: IngressRouteTCP
+    plural: ingressroutetcps
+    singular: ingressroutetcp
+  scope: Namespaced
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: traefikservices.traefik.containo.us
+
+spec:
+  group: traefik.containo.us
+  version: v1alpha1
+  names:
+    kind: TraefikService
+    plural: traefikservices
+    singular: traefikservice
+  scope: Namespaced
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;traefikservice配置&#34;&gt;TraefikService配置&lt;/h2&gt;
+&lt;p&gt;TraefikService有点类似Maesh解决服务之间的调用逻辑，只是Maesh依赖coredns；另外traefik service还可以设置后端服务权重，配置服务的流量镜像。&lt;/p&gt;
+&lt;p&gt;这里我们配置traefik dashboard和rancher的traefikservice类型服务，其他服务配置可以参考这里rancher的traefik service, traefik service会转发请求到kubernetes 的服务类型(上一章节我们已经通过helm3创建了rancher服务)，这里只是举例说明：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
+kind: TraefikService
+metadata:
+  name: traefik-webui-traefikservice
+  namespace: kube-system
+
+spec:
+  weighted:
+    services:
+      - name: traefik-ingress-service
+        weight: 1
+        port: 8080
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: TraefikService
+metadata:t
+  name: rancher-traefikservice
+  namespace: cattle-system
+
+spec:
+  weighted:
+    services:
+      - name: rancher
+        weight: 1
+        port: 80
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;deployment配置&#34;&gt;Deployment配置&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;配置k8s标准service服务&lt;/li&gt;
+&lt;li&gt;创建traefik configmap,并配置entrypoints和默认SSL证书&lt;/li&gt;
+&lt;li&gt;Deployment方式部署traefik ingress controller&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service
+  namespace: kube-system
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb
+  ports:
+    - protocol: TCP
+      port: 80
+      nodePort: 23456
+      name: http
+    - protocol: TCP
+      port: 443
+      nodePort: 23457
+      name: https
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-conf
+  namespace: kube-system
+data:
+  traefik.toml: |
+    [global]
+      checkNewVersion = false
+      sendAnonymousUsage = false
+    [log]
+      level = &amp;quot;DEBUG&amp;quot;
+    [api]
+      dashboard = true
+    [metrics.prometheus]
+      buckets = [0.1,0.3,1.2,5.0]
+      entryPoint = &amp;quot;metrics&amp;quot;
+    [entryPoints]
+      [entryPoints.http]
+        address = &amp;quot;:80&amp;quot;
+      [entryPoints.https]
+        address = &amp;quot;:443&amp;quot;
+    [tls.stores]
+      [tls.stores.default]
+        [tls.stores.default.defaultCertificate]
+          certFile = &amp;quot;/config/tls/test.cn.crt&amp;quot;
+          keyFile  = &amp;quot;/config/tls/test.cn.key&amp;quot;
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: traefik
+  namespace: kube-system
+  labels:
+    k8s-app: traefik-ingress-lb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: traefik-ingress-lb
+  template:
+    metadata:
+      labels:
+        k8s-app: traefik-ingress-lb
+        name: traefik-ingress-lb
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        node-role.kubernetes.io/traefik: &amp;quot;true&amp;quot;
+      volumes:
+      - name: ssl
+        secret:
+          secretName: traefik-cert
+      - name: config
+        configMap:
+          name: traefik-conf
+      containers:
+      - image: traefik:v2.1.1
+        name: traefik-ingress-lb
+        volumeMounts:
+        - mountPath: &amp;quot;/config&amp;quot;
+          name: &amp;quot;config&amp;quot;
+        - mountPath: &amp;quot;/config/tls&amp;quot;
+          name: &amp;quot;ssl&amp;quot;
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 800Mi
+          requests:
+            cpu: 500m
+            memory: 600Mi
+        ports:
+        - name: http
+          containerPort: 80
+          hostPort: 80
+        - name: https
+          containerPort: 443
+          hostPort: 443
+        args:
+        - --entrypoints.http.Address=:80
+        - --entrypoints.https.Address=:443
+        - --api
+        - --accesslog
+        - --providers.file.directory=/config/
+        - --providers.file.watch=true
+        - --ping=true
+        - --providers.kubernetescrd
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;ingressrouter配置&#34;&gt;IngressRouter配置&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;定义middleware给rancher服务配置X-Forwarded-Proto的头信息&lt;/li&gt;
+&lt;li&gt;配置rancher的ingressroute，并使用默认证书&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: kube-system
+spec:
+  redirectScheme:
+    scheme: https
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: http-default-router
+  namespace: kube-system
+spec:
+  entryPoints:
+    - http
+  routes:
+  - match: HostRegexp(`{host:.+}`)
+    kind: Rule
+    services:
+    - name: traefik-ingress-service
+      kind: Service
+      namespaces: kube-system
+      port: 80
+    middlewares:
+    - name: redirect-https
+  tls:
+    options:
+      name: mytlsoption
+      namespaces: kube-system
+    certResolver: default
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-webui
+  namespace: kube-system
+spec:
+  entryPoints:
+    - https
+  routes:
+  - match: Host(`traefik.test.cn`)
+    kind: Rule
+    services:
+    - name: api@internal
+      kind: TraefikService
+      namespaces: kube-system
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置rancher的ingressroute&#34;&gt;配置Rancher的IngressRoute&lt;/h2&gt;
+&lt;p&gt;由于我这里使用rancher管理集群，实际环境可以根据你自己需求配置&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;定义middleware给rancher服务配置X-Forwarded-Proto的头信息&lt;/li&gt;
+&lt;li&gt;配置rancher的ingressroute，并使用默认证书&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rancher-https-headers
+  namespace: cattle-system
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: &amp;quot;https&amp;quot;
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rancher-tls
+  namespace: cattle-system
+spec:
+  entryPoints:
+  - https
+  routes:
+  - match: Host(`rancher.test.cn`)
+    kind: Rule
+    services:
+    - name: rancher
+      kind: Service
+      namespaces: cattle-system
+      port: 80
+    middlewares:
+    - name: rancher-https-headers
+      namespaces: cattle-system
+
+  tls:
+    certResolver: default
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;统一部署traefik21&#34;&gt;统一部署traefik2.1&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;kubectl apply -f 01-crd.yaml
+kubectl apply -f 02-rbac.yaml
+kubectl apply -f 03-tlsoption.yaml
+kubectl apply -f 04-traefikservices.yaml #非必须
+kubectl apply -f 05-traefik.yaml
+kubectl apply -f 06-ingressrouter.yaml
+kubectl apply -f 06-ingressrouter-rancher.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更多配置信息，请移步我的github仓库：https://github.com/iwz2099/kubecase/tree/master/traefik/v2&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>kubeasz部署k8s集群</title>
+      <link>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</link>
+      <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</guid>
+      
+        <description>&lt;h2 id=&#34;环境准备&#34;&gt;环境准备&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Master节点&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;172.16.244.14
+172.16.244.16
+172.16.244.18
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;Node节点&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;172.16.244.25
+172.16.244.27
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Master节点VIP地址: 172.16.243.13&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;部署工具:Ansible/kubeasz&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;初始化环境&#34;&gt;初始化环境&lt;/h2&gt;
+&lt;h3 id=&#34;安装ansible&#34;&gt;安装Ansible&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;apt update
+apt-get install ansible expect
+git clone https://github.com/easzlab/kubeasz
+cd kubeasz
+cp * /etc/ansible/
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置ansible免密登录&#34;&gt;配置ansible免密登录&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -b 2048 #生成密钥
+./tools/yc-ssh-key-copy.sh  hosts root &#39;rootpassword&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;准备二进制文件&#34;&gt;准备二进制文件&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;cd tools
+./easzup -D #默认情况都会下载到/etc/ansible/bin/目录下
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置hosts文件如下&#34;&gt;配置hosts文件如下:&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;[kube-master]
+172.16.244.14
+172.16.244.16
+172.16.244.18
+
+[etcd]
+172.16.244.14 NODE_NAME=etcd1
+172.16.244.16 NODE_NAME=etcd2
+172.16.244.18 NODE_NAME=etcd3
+
+#haproxy-keepalived
+[haproxy]
+172.16.244.14
+172.16.244.16
+172.16.244.18
+
+[kube-node]
+172.16.244.25
+172.16.244.27
+
+
+# [optional] loadbalance for accessing k8s from outside
+[ex-lb]
+172.16.244.14 LB_ROLE=backup EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
+172.16.244.16 LB_ROLE=backup EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
+172.16.244.18 LB_ROLE=master EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
+
+# [optional] ntp server for the cluster
+[chrony]
+172.16.244.18
+
+[all:vars]
+# --------- Main Variables ---------------
+# Cluster container-runtime supported: docker, containerd
+CONTAINER_RUNTIME=&amp;quot;docker&amp;quot;
+
+# Network plugins supported: calico, flannel, kube-router, cilium, kube-ovn
+#CLUSTER_NETWORK=&amp;quot;flannel&amp;quot;
+CLUSTER_NETWORK=&amp;quot;calico&amp;quot;
+
+# Service proxy mode of kube-proxy: &#39;iptables&#39; or &#39;ipvs&#39;
+PROXY_MODE=&amp;quot;ipvs&amp;quot;
+
+# K8S Service CIDR, not overlap with node(host) networking
+SERVICE_CIDR=&amp;quot;10.68.0.0/16&amp;quot;
+
+# Cluster CIDR (Pod CIDR), not overlap with node(host) networking
+CLUSTER_CIDR=&amp;quot;10.101.0.0/16&amp;quot;
+
+# NodePort Range
+NODE_PORT_RANGE=&amp;quot;20000-40000&amp;quot;
+
+# Cluster DNS Domain
+CLUSTER_DNS_DOMAIN=&amp;quot;cluster.local.&amp;quot;
+
+# -------- Additional Variables (don&#39;t change the default value right now) ---
+# Binaries Directory
+bin_dir=&amp;quot;/opt/kube/bin&amp;quot;
+
+# CA and other components cert/key Directory
+ca_dir=&amp;quot;/etc/kubernetes/ssl&amp;quot;
+
+# Deploy Directory (kubeasz workspace)
+base_dir=&amp;quot;/etc/ansible&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署k8s集群&#34;&gt;部署K8S集群&lt;/h2&gt;
+&lt;h3 id=&#34;初始化配置&#34;&gt;初始化配置&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;cd /etc/ansible
+ansible-playbook 01.prepare.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个过程主要做三件事：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;chrony role: 集群节点时间同步[可选]
+deploy role: 创建CA证书、kubeconfig、kube-proxy.kubeconfig
+prepare role: 分发CA证书、kubectl客户端安装、环境配置
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装etcd集群&#34;&gt;安装etcd集群&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 02.etcd.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装docker&#34;&gt;安装docker&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 03.docker.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-master&#34;&gt;部署kubernetes master&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 04.kube-master.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-node&#34;&gt;部署kubernetes node&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 05.kube-node.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-network这里选择calico&#34;&gt;部署kubernetes network(这里选择calico)&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 06.network.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署ingressk8s-dashbaordcoredns&#34;&gt;部署ingress/k8s dashbaord/coredns&lt;/h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;配置ingress所用ssl证书, 这里仓库默认使用的traefik1.7.12,后边我们打算升级为2.0&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;kubectl create secret tls traefik-cert --key=test.cn.key --cert=test.cn.pem  -n kube-system
+secret/traefik-cert created
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;部署集群扩展&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook 07.cluster-addon.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;master节点取消污点&#34;&gt;master节点取消污点&lt;/h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;默认部署完后，master节点状态是打了污点，不在调度策略如下：&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl  get node
+NAME            STATUS                     ROLES    AGE   VERSION
+172.16.244.14   Ready,SchedulingDisabled   master   91m   v1.16.2
+172.16.244.16   Ready,SchedulingDisabled   master   91m   v1.16.2
+172.16.244.18   Ready,SchedulingDisabled   master   91m   v1.16.2
+172.16.244.25   Ready                      node     90m   v1.16.2
+172.16.244.27   Ready                      node     90m   v1.16.2
+# kubectl  describe node  172.16.244.14 |grep Taint
+Taints:             node.kubernetes.io/unschedulable:NoSchedule
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;由于机器资源有限，所以把master也加入调度可用状态&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl patch node 172.16.244.14 -p &#39;{&amp;quot;spec&amp;quot;:{&amp;quot;unschedulable&amp;quot;:false}}&#39;
+# kubectl  get node
+NAME            STATUS   ROLES    AGE   VERSION
+172.16.244.14   Ready    master   95m   v1.16.2
+172.16.244.16   Ready    master   95m   v1.16.2
+172.16.244.18   Ready    master   95m   v1.16.2
+172.16.244.25   Ready    node     94m   v1.16.2
+172.16.244.27   Ready    node     94m   v1.16.2
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署外部负载均衡器keepalivedhaproxy&#34;&gt;部署外部负载均衡器(Keepalived+Haproxy)&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;ansible-playbook   roles/ex-lb/ex-lb.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署rancher&#34;&gt;部署Rancher&lt;/h2&gt;
+&lt;h3 id=&#34;安装helm3&#34;&gt;安装Helm3&lt;/h3&gt;
+&lt;p&gt;参考 &lt;a href=&#34;https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/&#34;&gt;https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/&lt;/a&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd /opt/soft
+wget https://get.helm.sh/helm-v3.0.1-linux-amd64.tar.gz
+tar xf helm-v3.0.1-linux-amd64.tar.gz
+cd linux-amd64/
+cp helm  /usr/local/bin/
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建证书&#34;&gt;创建证书&lt;/h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;因为由自己域名证书,所以这里使用k8s的secret创建的证书,当然也可以使用cert-manager工具签发rancher自己的证书或者使用letsEncrypt&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;kubectl -n cattle-system create secret tls tls-rancher-ingress --cert=test.cn.pem  --key=test.cn.key
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装rancher&#34;&gt;安装rancher&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+helm repo update
+helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --set hostname=rancher-cicd.test.cn --set ingress.tls.source=secret
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;检查ingress资源和部署状态&#34;&gt;检查ingress、资源和部署状态&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl  get ingress  --all-namespaces
+NAMESPACE       NAME      HOSTS                   ADDRESS   PORTS     AGE
+cattle-system   rancher   rancher-cicd.test.cn             80, 443   20h
+# kubectl -n cattle-system rollout status deploy/rancher
+Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 0 of 3 updated replicas are available...
+Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 1 of 3 updated replicas are available...
+Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 2 of 3 updated replicas are available...
+deployment &amp;quot;rancher&amp;quot; successfully rolled out
+# kubectl -n cattle-system get deploy rancher
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+rancher   3/3     3            3           5m5s
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，整个K8S集群已经搭建完毕，如果顺利的话，整个过程应该在10分钟左右，重要的是提前规划好集群。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>基于K8S部署gitlab-runner</title>
+      <link>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</link>
+      <pubDate>Thu, 14 Nov 2019 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</guid>
+      
+        <description>&lt;h2 id=&#34;部署gitlab-runner&#34;&gt;部署gitlab-runner&lt;/h2&gt;
+&lt;p&gt;这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitlab-runner.git&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;helm install --namespace gitlab-managed-apps --name k8s-gitlab-runner -f  values.yaml 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意：values.yaml文件需要设置privileged: true&lt;/p&gt;
+&lt;h2 id=&#34;构建基础镜像docker-in-docker&#34;&gt;构建基础镜像(docker in docker)&lt;/h2&gt;
+&lt;p&gt;Dockerfile文件内容：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM docker:19.03.1-dind
+WORKDIR /opt
+RUN echo &amp;quot;nameserver 114.114.114.114&amp;quot; &amp;gt;&amp;gt; /etc/resolv.conf
+RUN sed -i &#39;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#39; /etc/apk/repositories
+RUN apk update
+RUN apk upgrade
+RUN apk add g++ gcc make docker docker-compose  git
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;构建镜像并推送到harbor&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;docker build -t registry.test.cn/devops/docker-tool:19.03.1  .
+docker push  registry.test.cn/devops/docker-tool:19.03.1
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;gitlab-ci测试&#34;&gt;Gitlab-CI测试&lt;/h2&gt;
+&lt;p&gt;.gitlab-ci.yml文件内容如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;image: registry.test.cn/devops/docker-tool:19.03.1
+
+variables:
+  REPO_NAME: gitlab.test.cn/xxx/xxxx
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: &amp;quot;&amp;quot;
+  
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+stages:
+  - deploy
+
+deploy:
+  tags:
+    - k8s-gitlab-runner #指定runner
+  only:
+    - tags
+  stage: deploy
+  services:
+    - registry.test.cn/devops/docker-tool:19.03.1
+  script:
+    - export DOCKER_HOST=&#39;tcp://localhost:2375&#39;
+    - docker login -u &amp;quot;$Harbor_bce_user&amp;quot; -p &amp;quot;$Harbor_ecs_passwd&amp;quot; $Harbor_ecs_address #gitlab后台设置统一变量
+    - make deploy VERSION=$CI_COMMIT_REF_NAME #根据git tag构建镜像
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>基于Docker-compose搭建jenkins</title>
+      <link>https://wnote.com/post/cicd-jenkins-install/</link>
+      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
+      
+        <description>&lt;h2 id=&#34;docker-compose配置&#34;&gt;docker-compose配置&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;version: &#39;2&#39;
+ 
+services:
+  jenkins:
+    image: jenkins/jenkins:latest
+    restart: always
+    environment:
+      JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot;
+    ports:
+      - &amp;quot;80:8080&amp;quot;
+      - &amp;quot;50000:50000&amp;quot;
+    volumes:
+      - &#39;/ssd/jenkins:/var/jenkins_home&#39;
+      - &#39;/var/run/docker.sock:/var/run/docker.sock&#39;
+      - &#39;/etc/localtime:/etc/localtime:ro&#39;
+    dns: 223.5.5.5
+    networks:
+      - extnetwork
+networks:
+   extnetwork:
+      ipam:
+         config:
+         - subnet: 172.255.0.0/16
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;启动服务&#34;&gt;启动服务&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;docker-compose  up -d 
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Mac系统配置炫酷终端(oh my zsh)</title>
+      <link>https://wnote.com/post/tools-zsh-cool-install/</link>
+      <pubDate>Sat, 10 Nov 2018 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/tools-zsh-cool-install/</guid>
+      
+        <description>&lt;h1 id=&#34;brew工具&#34;&gt;brew工具&lt;/h1&gt;
+&lt;p&gt;官网:https://brew.sh&lt;/p&gt;
+&lt;p&gt;安装brew&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/usr/bin/ruby -e &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改brew源为国内源&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git -C &amp;quot;$(brew --repo)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git
+git -C &amp;quot;$(brew --repo homebrew/core)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git
+git -C &amp;quot;$(brew --repo homebrew/cask)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-cask.git
+export HOMEBREW_BOTTLE_DOMAIN=https://mirrors.aliyun.com/homebrew/homebrew-bottles #追加到~/.zshrc
+brew update  #更新homebrew
+brew upgrade #升级所有已经安装包
+brew cleanup #升级完成后清理旧版本包
+&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;iterm2&#34;&gt;iterm2&lt;/h1&gt;
+&lt;p&gt;安装iterm2&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;brew cask install iterm2
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Preferences&amp;ndash;&amp;gt;Appearance&amp;ndash;&amp;gt;Theme 选择自己喜欢主题,我这里选择了Light&lt;/li&gt;
+&lt;li&gt;Preferences&amp;ndash;&amp;gt;Profiles&amp;ndash;&amp;gt;Colors 配置自己喜欢颜色&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;oh-my-zsh&#34;&gt;Oh my zsh&lt;/h1&gt;
+&lt;p&gt;官网:https://ohmyz.sh&lt;/p&gt;
+&lt;p&gt;安装oh my zsh:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sh -c &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所有可选oh my zsh主题: &lt;a href=&#34;https://github.com/ohmyzsh/ohmyzsh/wiki/Themes&#34;&gt;https://github.com/ohmyzsh/ohmyzsh/wiki/Themes&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;所有oh my zsh插件: &lt;a href=&#34;https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins&#34;&gt;https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=&#34;炫酷主题&#34;&gt;炫酷主题&lt;/h1&gt;
+&lt;p&gt;我这里选择了自己喜欢的&lt;a href=&#34;https://github.com/denysdovhan/spaceship-prompt&#34;&gt;spaceship-prompt&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;安装主题所需字体并设置FiraCode&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/powerline/fonts
+cd fonts
+./install.sh
+brew tap homebrew/cask-fonts
+brew cask install font-fira-code
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字体选择：fira code&lt;/p&gt;
+&lt;p&gt;至此,我的炫酷终端已经搞定。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>Git日常命令总结</title>
+      <link>https://wnote.com/post/linux-git-commands-base/</link>
+      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-git-commands-base/</guid>
+      
+        <description>&lt;h2 id=&#34;git全局设置&#34;&gt;Git全局设置：&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git config --global user.name &amp;quot;wanzi&amp;quot;
+git config --global user.email &amp;quot;iwz2099@163.com&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git提交代码&#34;&gt;Git提交代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git clone git@github.com:iwz2099/test.git
+cd test
+touch README.md
+git add README.md
+git commit -m &amp;quot;add README&amp;quot;
+git push -u origin master
+#上面命令将本地的master分支推送到远程origin分值，同时-u指定当前仓库的默认远程分支名为origin，后面就可以不加任何参数使用git push了
+
+#包含本地分支都推送到origin主机
+git push -u origin --all  
+
+#如果本地是基于case_dev_wanzi分支开发,推送到远程case_dev分支
+git push origin case_dev_wanzi:case_dev
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git查询和清理&#34;&gt;Git查询和清理&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git status   #查询当前分支状态信息
+git log      #查看当前分支commit信息
+git log -n3  #查询最近三次提交commit 
+git log -p  -2  #查询每次提交的内容差异，只显示最近2条提交记录，
+git log --stat  #查询每次提交的简历统计信息
+git log --pretty=oneline #将每次提交的信息一行显示,oneline可以是short,full,fuller
+git log --pretty=format:&amp;quot;%h - %an, %ar : %s&amp;quot;
+git log --pretty=format:&amp;quot;%h %s&amp;quot; --graph  #ASCII字符串来形象地展示你的分支、合并历史
+git reflog #显示所有分支所有操作信息(包括commit,reset和已经删除的commit)
+git reflog #显示最近10条日志
+git grep -n   wanzi  #搜索提交历史和工作目录
+git grep --count   wanzi  #搜索显示次数
+git clean  #移除没有忽略的未跟踪文件
+git clean -d  #清理工作目录
+git clean -d -n  #-n测试清理工作目录，实际未清理
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git分支操作&#34;&gt;Git分支操作：&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git branch #查看当前分支
+git branch -v #查看每个分支的最后一次提交
+#基于远程master分支创建本地dev分支
+git checkout -b dev  origin/master 
+
+git branch --merged #查看哪些分支合并到当前分支
+git branch --no-merged #查看哪些分支尚未合并到当前分支
+
+#新开发一个功能，-b创建分支，并切换到新创建的分支上
+git checkout -b dev-20180720-111111-wanzi
+相当于：
+git branch r-20180720-111111-wanzi
+git checkout r-20180720-111111-wanzi
+
+将开发后功能合并到Master主干
+git checkout master
+git merge  dev-20180720-111111-wanzi
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git合并操作&#34;&gt;Git合并操作&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;#基于远程master新建分支issue54,基于该分支进行开发项目
+git remote add origin git@github.com:iwz2099/test.git
+git  checkout -b issue54  origin/master
+
+#功能开发完后向把开发后的功能合并到远程分支
+git  fetch origin    #拉去差异信息
+git  merge origin/master  #合并远程分支到当前项目
+git  push origin master  #推送代码到远程分支
+
+git  log --no-merges issue54..origin/master  #查看master哪些信息没有合并到issue54分支里。
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git-tag操作&#34;&gt;Git tag操作&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git tag   #列出当前项目tag信息
+git tag -l &#39;wanzi-2018*&#39;   #-l还可以只列出自己的分支
+git tag  v1.8-20180720   #创建标签（一般临时用）
+git tag -a  v1.8-20180720  -m &#39;wanzi version 1.8&#39;   #-a创建tag，-m并添加说明，会存储tag信息
+git  show  v1.8-20180720  #查看标签信息，这个时候可以对比下git tag -a和git tag差别
+git push origin tag_name    #推送tag到远程仓库
+git push origin  --tags      #一次性推送很多tag到远程仓库
+git push origin :tag_name   #删除远程tag信息
+git checkout -b   dev-20180720-111111-wanzi    v1.2.0  #基于某个分支新建一个tag版本
+git branch -D  dev-20180720-123333-wanzi   #强制删除一个没有合并的分支
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git多人协作&#34;&gt;Git多人协作：&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;#A码农基于远程master新建分支feature1
+git checkout -b feature1 origin/master
+
+#B码农基于远程master新建分支feature11
+git checkout -b feature11 origin/master
+
+#A码农先开发完，并推送代码到远程服务的feature1分支,B码农后开发完，想把改过信息合并到feature1
+git fetch origin
+git merge origin/feature1
+git push -u origin feature11:feature1
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git取消暂存区文件和取消文件修改&#34;&gt;Git取消暂存区文件和取消文件修改&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;#代码git add到缓存区，并未commit提交，回滚代码
+git reset HEAD .  或者
+git reset HEAD a.txt
+这个命令仅改变暂存区，并不改变工作区，这意味着在无任何其他操作的情况下，工作区中的实际文件同该命令运行之前无任何变化
+
+git checkout --  .    #取消路径所有修改，回到上一个commit版本
+git checkout -- a.txt #取消a.txt所有改动，回到上一个commit版本
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git回滚到上次提交版本&#34;&gt;Git回滚到上次提交版本&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git log
+git reset --hard  &amp;lt;commit_id&amp;gt;  #回退一次提交的commit id
+git reset --hard HEAD^  #回退到上一版本 
+git reset --hard HEAD^^ #回退到倒数第二版
+git reset --hard HEAD~4 #回退到倒数第四版
+
+git push origin HEAD --force # 强制提交一次，之前错误的提交就从远程仓库删除(拥有项目管理权限的时候一定要慎重)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git回滚master代码到某个tag版本&#34;&gt;Git回滚master代码到某个tag版本&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;基于release tag新建回滚临时分支，并将分支强制推送到远程master&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;git checkout -b rollback_20180720  r-20180720-111225-wanzi
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;gitlab的项目setting里master项目管理员取消master保护&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;强制推送rollback_20180720分支到远程master主干(这个过程会强制回退到r-20180720-111225-wanzi这个版本)&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;git push origin rollback_20180720:master -f
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git其他操作&#34;&gt;Git其他操作&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;提交信息写错，还没提交,修改提交信息&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;git commit --amend --only -m &#39;fix: 修复一个bug&#39;  #修改提交信息
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;提交用户名和邮箱写错了，还没提交,修改提交信息&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;git commit --amend --author=&amp;quot;wanzi &amp;lt;iwz2099@163.com&amp;gt;&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Dockerfile多阶段构建</title>
+      <link>https://wnote.com/post/docker-dockerfile-multi-stage/</link>
+      <pubDate>Mon, 02 Jul 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-multi-stage/</guid>
+      
+        <description>&lt;p&gt;Docker多阶段构建理解:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;构建镜像需要有一个基础镜像,后续操作就会基于该基础镜像构建&lt;/li&gt;
+&lt;li&gt;docker镜像文件里有层级概念,每执行一次RUN指令,镜像就会多一层,所以通过减少层级来减少镜像大小&lt;/li&gt;
+&lt;li&gt;多个from的时候,只有最后一个from的镜像才是镜像的根镜像&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;自己项目部署中多阶段构建示例, 这里基于golang基础镜像编译以后的二进制直接copy到基于alpine构建的最小镜像里:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM golang:1.12.7 as build
+MAINTAINER wanzi &amp;lt;iwz2099@163.com&amp;gt;
+ 
+# 编译配置相关
+ARG NAME=gaia
+ARG FLAGS=-tags=jsoniter
+ARG GOOS=linux
+ARG GOARCH=amd64
+ARG PORT_TO_EXPOSE=10020
+ 
+ENV GOPROXY https://mirrors.aliyun.com/goproxy/
+ENV GO111MODULE on
+ 
+WORKDIR /opt/gaia
+COPY . .
+RUN GOOS=$GOOS GOARCH=$GOARCH go build -mod vendor -ldflags=&amp;quot;-s -w&amp;quot; -o $NAME $FLAGS
+ 
+FROM alpine
+WORKDIR /opt/gaia
+COPY --from=build /opt/gaia/gaia .
+RUN mkdir -p /opt/gaia/conf
+VOLUME [&amp;quot;/opt/gaia/conf&amp;quot;]
+ 
+CMD [&amp;quot;./gaia&amp;quot;]
+EXPOSE $PORT_TO_EXPOSE
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>Dockerfile语法详情</title>
+      <link>https://wnote.com/post/docker-dockerfile-details/</link>
+      <pubDate>Thu, 21 Jun 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-details/</guid>
+      
+        <description>&lt;h2 id=&#34;from&#34;&gt;FROM&lt;/h2&gt;
+&lt;p&gt;指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共库pull镜像下来。
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM ubuntu:14.04  #继承ubuntu:14.04
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;maintainer&#34;&gt;MAINTAINER&lt;/h2&gt;
+&lt;p&gt;指定创建者信息&lt;/p&gt;
+&lt;p&gt;MAINTAINER wanzi &amp;ldquo;&lt;a href=&#34;mailto:iwz2099@163.com&#34;&gt;iwz2099@163.com&lt;/a&gt;&amp;rdquo;&lt;/p&gt;
+&lt;h2 id=&#34;env&#34;&gt;ENV&lt;/h2&gt;
+&lt;p&gt;设置环境变量，会被后续 RUN 指令使用，并在容器运行时保持。
+ENV &lt;key&gt; &lt;value&gt;       # 只能设置一个变量
+ENV &lt;key&gt;=&lt;value&gt; &amp;hellip;   # 允许一次设置多个变量
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;run&#34;&gt;RUN&lt;/h2&gt;
+&lt;p&gt;RUN &lt;command&gt; 或 RUN [&amp;ldquo;executable&amp;rdquo;, &amp;ldquo;param1&amp;rdquo;, &amp;ldquo;param2&amp;rdquo;]。
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;RUN yum -y install bind-utils
+RUN [&amp;quot;/bin/bash&amp;quot;, &amp;quot;-c&amp;quot;, &amp;quot;yum -y install bind-utils&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;前者将在shell终端中运行命令,即 /bin/sh -c yum -y install bind-utils；后者则使用exec执行。指定使用其它终端可以通过第二种方式实现。
+每条RUN指令将在当前镜像基础上执行指定命令，并提交为新的镜像，后续的RUN都在之前RUN提交后的镜像为基础，镜像是分层的，可以通过一个镜像的任何一个历史提交点来创建，类似源码的版本控制。当命令较长时可以使用 \ 来换行。&lt;/p&gt;
+&lt;h2 id=&#34;copy&#34;&gt;COPY:&lt;/h2&gt;
+&lt;p&gt;COPY &lt;src&gt; &lt;dest&gt;
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;COPY script/ /build/script/
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;复制本地主机的&lt;src&gt;（为Dockerfile所在目录的相对路径）到容器中的 &lt;dest&gt;,当使用本地目录为源目录时，推荐使用 COPY。&lt;/p&gt;
+&lt;h2 id=&#34;add&#34;&gt;ADD&lt;/h2&gt;
+&lt;p&gt;ADD &lt;src&gt; &lt;dest&gt;
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ADD https://www.baidu.com/index.html   /var/www/html/
+ADD ubuntu-xenial-core-cloudimg-amd64-root.tar.gz /
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;该命令将复制指定的 &lt;src&gt; 到容器中的 &lt;dest&gt;。 其中&lt;src&gt;可以是Dockerfile所在目录的一个相对路径；也可以是一个 URL(自动下载后复制到容器)；还可以是一个tar文件（自动解压为目录）。&lt;/p&gt;
+&lt;h2 id=&#34;volume&#34;&gt;VOLUME&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;VOLUME [ &amp;quot;/data&amp;quot; ]
+VOLUME [ &amp;quot;/var/lib/redis&amp;quot;, &amp;quot;/var/log/redis&amp;quot; ]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明一个数据卷, 可用于挂载, []里面是路径，创建一个可以从本地主机或其他容器挂载的挂载点，一般用来存放数据库和需要保持的数据等。&lt;/p&gt;
+&lt;h2 id=&#34;user&#34;&gt;USER&lt;/h2&gt;
+&lt;p&gt;USER &lt;uid&gt;
+镜像正在运行时设置的一个UID,RUN命令执行时的用户&lt;/p&gt;
+&lt;h2 id=&#34;cmd&#34;&gt;CMD&lt;/h2&gt;
+&lt;p&gt;支持三种格式
+CMD [&amp;ldquo;executable&amp;rdquo;,&amp;ldquo;param1&amp;rdquo;,&amp;ldquo;param2&amp;rdquo;] 使用 exec 执行，推荐方式；
+CMD command param1 param2 在 /bin/sh 中执行，提供给需要交互的应用；
+CMD [&amp;ldquo;param1&amp;rdquo;,&amp;ldquo;param2&amp;rdquo;] 提供给 ENTRYPOINT 的默认参数；
+指定启动容器时执行的命令，每个 Dockerfile 只能有一条 CMD 命令。如果指定了多条命令，只有最后一条会被执行。&lt;/p&gt;
+&lt;h2 id=&#34;workdir&#34;&gt;WORKDIR&lt;/h2&gt;
+&lt;p&gt;指定RUN、CMD与ENTRYPOINT命令的工作目录
+例子:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;WORKDIR /opt/nodeapp
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;onbuild&#34;&gt;ONBUILD&lt;/h2&gt;
+&lt;p&gt;ONBUILD [INSTRUCTION]
+配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令。&lt;/p&gt;
+&lt;p&gt;例如:Dockerfile使用如下的内容创建了镜像image-A。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ONBUILD ADD . /app/src
+ONBUILD RUN /usr/local/bin/python-build --dir /app/src
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例如:如果基于 image-A 创建新的镜像时，新的Dockerfile中使用 FROM image-A指定基础镜像时，会自动执行 ONBUILD 指令内容，等价于在后面添加了两条指令。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM image-A
+#Automatically run the following
+ADD . /app/src
+RUN /usr/local/bin/python-build --dir /app/src
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 ONBUILD 指令的镜像，推荐在标签中注明，例如 ruby:1.9-onbuild。&lt;/p&gt;
+&lt;h2 id=&#34;entrypoint&#34;&gt;ENTRYPOINT&lt;/h2&gt;
+&lt;p&gt;配置容器启动后执行的命令，并且不可被docker run提供的参数覆盖，而CMD是可以被覆盖的。如果需要覆盖，则可以使用docker run &amp;ndash;entrypoint选项。每个Dockerfile中只能有一个ENTRYPOINT，当指定多个时，只有最后一个生效。
+支持两种格式
+ENTRYPOINT [ &amp;ldquo;nodejs&amp;rdquo;, &amp;ldquo;server.js&amp;rdquo; ]
+ENTRYPOINT command param1 param2（shell中执行）&lt;/p&gt;
+&lt;h2 id=&#34;expose&#34;&gt;EXPOSE&lt;/h2&gt;
+&lt;p&gt;EXPOSE &lt;port&gt;
+告知服务器容器在运行时监听的端口,在启动容器时需要通过 -P，Docker 主机会自动分配一个端口转发到指定的端口。
+例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;EXPOSE 3000
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;注意事项&#34;&gt;注意事项&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;尽量精简,不安装多余的软件包&lt;/li&gt;
+&lt;li&gt;编写.dockerignore 文件,排除一些目录和文件,语法类似于.gitignore&lt;/li&gt;
+&lt;li&gt;尽量选择 Docker官方提供镜像作为基础版本,减少镜像体积.&lt;/li&gt;
+&lt;li&gt;Dockerfile开头几行的指令应当固定下来,不建议频繁更改,有效利用缓存.&lt;/li&gt;
+&lt;li&gt;多条RUN命令使用&#39;&#39;连接,有利于理解且方便维护.&lt;/li&gt;
+&lt;li&gt;COPY与ADD优先使用前者&lt;/li&gt;
+&lt;li&gt;通过-t标记构建镜像,有利于管理新创建的镜像.&lt;/li&gt;
+&lt;li&gt;不在Dockerfile中映射公有端口.&lt;/li&gt;
+&lt;li&gt;Push前先在本地运行,确保构建的镜像无误.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+      
+    </item>
+    
+  </channel>
+</rss>

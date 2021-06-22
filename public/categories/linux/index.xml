@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>linux on 丸子有记</title>
+    <link>https://wnote.com/categories/linux/</link>
+    <description>Recent content in linux on 丸子有记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 28 Jul 2018 17:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/linux/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Git日常命令总结</title>
+      <link>https://wnote.com/post/linux-git-commands-base/</link>
+      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-git-commands-base/</guid>
+      <description>Git全局设置： git config --global user.name &amp;quot;wanzi&amp;quot; git config --global user.email &amp;quot;iwz2099@163.com&amp;quot; Git提交代码 git clone git@github.com:iwz2099/test.git cd test touch README.md git add README.md git commit -m &amp;quot;add README&amp;quot; git push -u origin master #上面命令将本地的master分支推送到远程ori</description>
+    </item>
+    
+    <item>
+      <title>Dockerfile多阶段构建</title>
+      <link>https://wnote.com/post/docker-dockerfile-multi-stage/</link>
+      <pubDate>Mon, 02 Jul 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-multi-stage/</guid>
+      <description>Docker多阶段构建理解: 构建镜像需要有一个基础镜像,后续操作就会基于该基础镜像构建 docker镜像文件里有层级概念,每执行一次RUN指令</description>
+    </item>
+    
+    <item>
+      <title>Dockerfile语法详情</title>
+      <link>https://wnote.com/post/docker-dockerfile-details/</link>
+      <pubDate>Thu, 21 Jun 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-dockerfile-details/</guid>
+      <description>FROM 指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共</description>
+    </item>
+    
+    <item>
+      <title>Docker基础命令</title>
+      <link>https://wnote.com/post/docker-commands-base/</link>
+      <pubDate>Wed, 20 Jun 2018 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/docker-commands-base/</guid>
+      <description>常用命令 docker info #查看本地docker信息 docker search openresty #搜索远程镜像仓库 docker images #查看当前系统镜像仓库镜像 docker ps #查看当前正在运行容器 docker pull centos #获取远程镜像，</description>
+    </item>
+    
+  </channel>
+</rss>
