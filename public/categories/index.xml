@@ -6,7 +6,11 @@
     <description>Recent content in Categories on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    
+	<atom:link href="https://wnote.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>cicd</title>
       <link>https://wnote.com/categories/cicd/</link>

@@ -6,7 +6,7 @@
     <description>Recent content on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 20 Aug 2018 21:38:52 +0800</lastBuildDate>
     
         <atom:link href="https://wnote.com/index.xml" rel="self" type="application/rss+xml" />
     
@@ -19,7 +19,7 @@
       <guid>https://wnote.com/about/</guid>
       
         <description>&lt;h2 id=&#34;关于我&#34;&gt;关于我&lt;/h2&gt;
-&lt;p&gt;我的网名&amp;quot;丸子说&amp;quot;, 目前在一家人工智能公司担任DevOps，业余时间喜欢看看书、写写博客, 喜欢以博会友。&lt;/p&gt;
+&lt;p&gt;我的网名&amp;quot;丸子说&amp;rdquo;, 目前在一家人工智能公司担任DevOps，业余时间喜欢看看书、写写博客, 喜欢以博会友。&lt;/p&gt;
 &lt;h2 id=&#34;关于本站&#34;&gt;关于本站&lt;/h2&gt;
 &lt;p&gt;这个站点的域名是 &lt;code&gt;wnote.com&lt;/code&gt; ，w寓意“丸子”，因此wnote可以理解为丸子有记，有忆可记.&lt;/p&gt;
 &lt;h2 id=&#34;丸子日常&#34;&gt;丸子日常&lt;/h2&gt;
@@ -2871,7 +2871,7 @@ ENTRYPOINT command param1 param2（shell中执行）&lt;/p&gt;
 &lt;li&gt;编写.dockerignore 文件,排除一些目录和文件,语法类似于.gitignore&lt;/li&gt;
 &lt;li&gt;尽量选择 Docker官方提供镜像作为基础版本,减少镜像体积.&lt;/li&gt;
 &lt;li&gt;Dockerfile开头几行的指令应当固定下来,不建议频繁更改,有效利用缓存.&lt;/li&gt;
-&lt;li&gt;多条RUN命令使用&#39;&#39;连接,有利于理解且方便维护.&lt;/li&gt;
+&lt;li&gt;多条RUN命令使用&amp;rsquo;&#39;连接,有利于理解且方便维护.&lt;/li&gt;
 &lt;li&gt;COPY与ADD优先使用前者&lt;/li&gt;
 &lt;li&gt;通过-t标记构建镜像,有利于管理新创建的镜像.&lt;/li&gt;
 &lt;li&gt;不在Dockerfile中映射公有端口.&lt;/li&gt;

@@ -6,7 +6,11 @@
     <description>Recent content in argocd on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Wed, 29 Jul 2020 15:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/tags/argocd/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 29 Jul 2020 15:22:42 +0800</lastBuildDate>
+    
+	<atom:link href="https://wnote.com/tags/argocd/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>ArgoCD配合Jenkins Pipeline自动化部署应用</title>
       <link>https://wnote.com/post/cicd-argocd-jenkins-pipeline/</link>

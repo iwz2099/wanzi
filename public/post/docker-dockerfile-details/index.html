@@ -31,7 +31,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.79.1" />
+<meta name="generator" content="Hugo 0.68.3" />
 
 
 <link rel="canonical" href="https://wnote.com/post/docker-dockerfile-details/" />
@@ -66,14 +66,13 @@
 <meta property="article:modified_time" content="2018-06-21T16:22:42+08:00" />
 <meta itemprop="name" content="Dockerfile语法详情">
 <meta itemprop="description" content="dockerfile文件如何编写,dockerfile编写配置">
-<meta itemprop="datePublished" content="2018-06-21T16:22:42+08:00" />
-<meta itemprop="dateModified" content="2018-06-21T16:22:42+08:00" />
-<meta itemprop="wordCount" content="1446">
+<meta itemprop="datePublished" content="2018-06-21T16:22:42&#43;08:00" />
+<meta itemprop="dateModified" content="2018-06-21T16:22:42&#43;08:00" />
+<meta itemprop="wordCount" content="1452">
 
 
 
-<meta itemprop="keywords" content="docker,dockerfile," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="docker,dockerfile," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Dockerfile语法详情"/>
 <meta name="twitter:description" content="dockerfile文件如何编写,dockerfile编写配置"/>
 
@@ -305,7 +304,7 @@
             <a href="https://wnote.com/categories/linux/"> linux </a>
             
           </div>
-        <span class="more-meta"> 约 1446 字 </span>
+        <span class="more-meta"> 约 1452 字 </span>
           <span class="more-meta"> 预计阅读 3 分钟 </span>
 
         
@@ -421,7 +420,7 @@ ENTRYPOINT command param1 param2（shell中执行）</p>
 <li>编写.dockerignore 文件,排除一些目录和文件,语法类似于.gitignore</li>
 <li>尽量选择 Docker官方提供镜像作为基础版本,减少镜像体积.</li>
 <li>Dockerfile开头几行的指令应当固定下来,不建议频繁更改,有效利用缓存.</li>
-<li>多条RUN命令使用''连接,有利于理解且方便维护.</li>
+<li>多条RUN命令使用&rsquo;'连接,有利于理解且方便维护.</li>
 <li>COPY与ADD优先使用前者</li>
 <li>通过-t标记构建镜像,有利于管理新创建的镜像.</li>
 <li>不在Dockerfile中映射公有端口.</li>

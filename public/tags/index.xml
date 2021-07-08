@@ -6,7 +6,11 @@
     <description>Recent content in Tags on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate><atom:link href="https://wnote.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    
+	<atom:link href="https://wnote.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>argo</title>
       <link>https://wnote.com/tags/argo/</link>
@@ -40,6 +44,15 @@
       <pubDate>Fri, 26 Mar 2021 17:22:42 +0800</pubDate>
       
       <guid>https://wnote.com/tags/ceph/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>git</title>
+      <link>https://wnote.com/tags/git/</link>
+      <pubDate>Fri, 26 Mar 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/tags/git/</guid>
       <description></description>
     </item>
     
@@ -94,6 +107,15 @@
       <pubDate>Wed, 29 Jul 2020 15:22:42 +0800</pubDate>
       
       <guid>https://wnote.com/tags/k8s/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ci</title>
+      <link>https://wnote.com/tags/ci/</link>
+      <pubDate>Mon, 18 May 2020 10:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/tags/ci/</guid>
       <description></description>
     </item>
     
@@ -166,24 +188,6 @@
       <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
       
       <guid>https://wnote.com/tags/ansible/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>kubeasz</title>
-      <link>https://wnote.com/tags/kubeasz/</link>
-      <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/tags/kubeasz/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>ci</title>
-      <link>https://wnote.com/tags/ci/</link>
-      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/tags/ci/</guid>
       <description></description>
     </item>
     
