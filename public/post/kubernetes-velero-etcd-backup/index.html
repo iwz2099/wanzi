@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-cn" itemscope itemtype="http://schema.org/WebPage">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>制定kubernetes集群备份策略 - 丸子有记</title>
+  
+
+<meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes"/>
+
+<meta name="MobileOptimized" content="width"/>
+<meta name="HandheldFriendly" content="true"/>
+
+
+<meta name="applicable-device" content="pc,mobile">
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="author" content="wanzi" /><meta name="description" content="制定kubernetes集群备份策略" />
+
+  <meta name="keywords" content="丸子有记, 丸子笔记, 丸子日记" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.68.3" />
+
+
+<link rel="canonical" href="https://wnote.com/post/kubernetes-velero-etcd-backup/" />
+
+
+
+
+
+<link rel="icon" href="/favicon.ico" />
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/sass/jane.min.f1e506a781bf25d33ffc18aa6b4e972a965c58049d27d4f92b7db2e9bf28e4bf.css" integrity="sha256-8eUGp4G/JdM//Biqa06XKpZcWASdJ9T5K32y6b8o5L8=" media="screen" crossorigin="anonymous">
+
+
+
+
+
+<meta property="og:title" content="制定kubernetes集群备份策略" />
+<meta property="og:description" content="制定kubernetes集群备份策略" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wnote.com/post/kubernetes-velero-etcd-backup/" />
+<meta property="article:published_time" content="2021-09-11T17:22:42+08:00" />
+<meta property="article:modified_time" content="2021-09-11T17:22:42+08:00" />
+<meta itemprop="name" content="制定kubernetes集群备份策略">
+<meta itemprop="description" content="制定kubernetes集群备份策略">
+<meta itemprop="datePublished" content="2021-09-11T17:22:42&#43;08:00" />
+<meta itemprop="dateModified" content="2021-09-11T17:22:42&#43;08:00" />
+<meta itemprop="wordCount" content="2761">
+
+
+
+<meta itemprop="keywords" content="velero,k8s,备份,keepalived," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="制定kubernetes集群备份策略"/>
+<meta name="twitter:description" content="制定kubernetes集群备份策略"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+
+
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">丸子有记</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/">主页</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/post/">归档</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/categories/">分类</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/tags/">标签</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/about/">关于</a>
+          
+        
+      </li>
+    
+
+    
+  </ul>
+</nav>
+
+
+  
+    
+
+
+
+
+
+
+  <link rel="stylesheet" href="/lib/photoswipe/photoswipe.min.css" />
+  <link rel="stylesheet" href="/lib/photoswipe/default-skin/default-skin.min.css" />
+
+
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+  
+
+  
+
+  
+
+  <header id="header" class="header container">
+    <div class="logo-wrapper">
+  <a href="/" class="logo">
+    
+      丸子有记
+    
+  </a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/">主页</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/post/">归档</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/categories/">分类</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/tags/">标签</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/about/">关于</a>
+          
+
+        
+
+      </li>
+    
+
+    
+    
+
+    
+  </ul>
+</nav>
+
+  </header>
+
+  <div id="mobile-panel">
+    <main id="main" class="main bg-llight">
+      <div class="content-wrapper">
+        <div id="content" class="content container">
+          <article class="post bg-white">
+    
+    <header class="post-header">
+      <h1 class="post-title">制定kubernetes集群备份策略</h1>
+      
+      <div class="post-meta">
+        <time datetime="2021-09-11" class="post-time">
+          2021-09-11
+        </time>
+        <div class="post-category">
+            <a href="https://wnote.com/categories/kubernetes/"> kubernetes </a>
+            
+          </div>
+        <span class="more-meta"> 约 2761 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+
+        
+        
+
+        
+        
+      </div>
+    </header>
+
+    
+    
+<div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#备份etcd">备份ETCD</a></li>
+    <li><a href="#minio对象存储服务搭建">minio对象存储服务搭建</a></li>
+    <li><a href="#velero备份之安装客户端">velero备份之安装客户端</a></li>
+    <li><a href="#velero备份之k8s部署velero">velero备份之k8s部署velero</a></li>
+    <li><a href="#velero备份之velero命令">velero备份之velero命令</a>
+      <ul>
+        <li><a href="#备份查看删除操作">备份,查看,删除操作</a></li>
+        <li><a href="#定时备份">定时备份：</a></li>
+        <li><a href="#备份恢复">备份恢复：</a></li>
+      </ul>
+    </li>
+    <li><a href="#velero备份实战">velero备份实战</a>
+      <ul>
+        <li><a href="#velero对集群进行一次完整备份">velero对集群进行一次完整备份：</a></li>
+        <li><a href="#设置4小时定时备份一次备份保留2个月">设置4小时定时备份一次，备份保留2个月：</a></li>
+        <li><a href="#同集群下手动从完整备份中恢复其中一个namespace到指定namespace">同集群下，手动从完整备份中恢复其中一个namespace到指定namespace</a></li>
+        <li><a href="#跨集群将定期备份数据恢复">跨集群，将定期备份数据恢复</a></li>
+        <li><a href="#查看已经备份数据">查看已经备份数据：</a></li>
+        <li><a href="#恢复指定命名空间数据">恢复指定命名空间数据</a></li>
+        <li><a href="#卸载velero">卸载velero</a></li>
+        <li><a href="#备份中遇到异常">备份中遇到异常</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+
+    
+    <div class="post-content">
+      <p>对于备份，每家互联网公司技术人员都要去做的一件事儿，当然我们也不例外，今天我主要针对生产环境kubernetes集群制定一些自己的策略，这里分享给大家。</p>
+<p>我这里kubernetes备份目的主要为了防止如下情况出现：</p>
+<ul>
+<li>防止误操作删除集群中某一个namespace</li>
+<li>防止误操作导致集群中某一个资源出现异常，比如deployment、configmap等</li>
+<li>防止误操作删除集群部分资源对象</li>
+<li>防止etcd数据丢失</li>
+</ul>
+<h2 id="备份etcd">备份ETCD</h2>
+<p>备份etcd，防止k8s集群出现了集群级别故障或etcd数据丢失情况，导致整个集群不可用的情况，这种情况只能通过恢复集群恢复业务。</p>
+<p>备份etcd脚本如下：</p>
+<pre><code>#!/bin/bash
+#ENDPOINTS=&quot;https://192.168.1.207:2379,https://192.168.1.208:2379,https://192.168.1.209:2379&quot;
+ENDPOINTS=&quot;127.0.0.1:2379&quot;
+CACERT=&quot;/etc/kubernetes/pki/etcd/ca.crt&quot;
+CERT=&quot;/etc/kubernetes/pki/etcd/server.crt&quot;
+KEY=&quot;/etc/kubernetes/pki/etcd/server.key&quot;
+DATE=`date +%Y%m%d-%H%M%S`
+BACKUP_DIR=&quot;/home/centos/hostpath/backups/k8s/etcd&quot;
+ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=${CACERT} --cert=${CERT} --key=${KEY}  --endpoints=&quot;${ENDPOINTS}&quot; snapshot save ${BACKUP_DIR}/k8s-snapshot-${DATE}.db
+find  $BACKUP_DIR/ -type f -mtime +20 -exec rm -f {} \;
+</code></pre><p>cron任务计划：</p>
+<pre><code>50 21 * * * /bin/bash /home/centos/hostpath/backups/k8s/etcdv3-bak.sh
+</code></pre><h2 id="minio对象存储服务搭建">minio对象存储服务搭建</h2>
+<p>由于我们的存储集群采用的GlusterFS搭建，因此，这里我只能使用minio搭建对象存储，底层采用GlusterFS文件系统；如果你使用阿里云OSS备份你集群资源，请忽略这一步，可以移驾：https://github.com/AliyunContainerService/velero-plugin</p>
+<p>由于minio在k8s环境下搭建需要提供对应存储pv/pvc，这里为了简单，直接启动docker方式：</p>
+<pre><code>version: '2.0'
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - &quot;39000:9000&quot;
+      - &quot;39001:9001&quot;
+    restart: always
+    command: server --console-address ':9001' /data
+    environment:
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: adminSD#123
+    logging:
+      options:
+        max-size: &quot;1000M&quot; # 最大文件上传限制
+        max-file: &quot;100&quot;
+      driver: json-file
+    volumes:
+      - /home/centos/hostpath/backups/k8s/velero:/data # 映射文件路径
+    networks:
+      - minio
+
+networks:
+  minio:
+    ipam:
+      config:
+      - subnet: 10.210.1.0/24
+        gateway: 10.210.1.1
+</code></pre><p>打开浏览器输入如下地址和账户信息，就可以通过web控制台管理minio对象存储了</p>
+<pre><code>minio web：http://192.168.1.214:39001
+minio admin：admin
+minio admin passwd：adminSD#123
+</code></pre><h2 id="velero备份之安装客户端">velero备份之安装客户端</h2>
+<pre><code>brew install velero
+</code></pre><p>创建文件credentials-velero内容如下,方便后边创建velero server端连接对象存储使用：</p>
+<pre><code>[default]
+aws_access_key_id = admin
+aws_secret_access_key = adminSD#123
+</code></pre><h2 id="velero备份之k8s部署velero">velero备份之k8s部署velero</h2>
+<pre><code># velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&quot;true&quot;,s3Url=http://192.168.1.214:39000
+</code></pre><h2 id="velero备份之velero命令">velero备份之velero命令</h2>
+<h3 id="备份查看删除操作">备份,查看,删除操作</h3>
+<pre><code>#备份集群ingress-nginx namespace下资源:
+velero backup create ingress-nginx-backup --include-namespaces ingress-nginx
+
+#查看备份结果
+velero backup describe ingress-nginx-backup
+velero backup logs ingress-nginx-backup
+
+#删除备份
+velero delete backup ingress-nginx-backup
+
+#备份非ingress-nginx和test命名空间下的资源：
+velero backup create k8s-full-test-backup --exclude-namespaces ingress-nginx,test
+
+#备份特定资源类型
+velero backup create kube-system-backup --include-resources pod,secret
+
+#--confirm 直接删除备份，无需确认：
+velero backup delete kube-system-backup --confirm
+
+#备份带pv pod
+velero backup create pvc-backup  --snapshot-volumes --include-namespaces test-velero
+</code></pre><p>注意：</p>
+<ul>
+<li>&ndash;include-resources备份指定资源类型, &ndash;exclude-resources指定排除某些资源类型</li>
+</ul>
+<h3 id="定时备份">定时备份：</h3>
+<pre><code># 每六个小时备份一次
+velero create schedule ${SCHEDULE_NAME} --schedule=&quot;0 */6 * * *&quot;
+
+# 每六个小时使用every备份一次
+velero create schedule ${SCHEDULE_NAME} --schedule=&quot;@every 6h&quot;
+
+# 创建一个web命名空间的天备份
+velero create schedule ${SCHEDULE_NAME} --schedule=&quot;@every 24h&quot; --include-namespaces web
+
+# 创建一个周备份，持续时间为90天。
+velero create schedule ${SCHEDULE_NAME} --schedule=&quot;@every 168h&quot; --ttl 2160h0m0s
+</code></pre><p>说明：&ndash;ttl可以指定backup的生存周期，在ttl超时后，backup会被定期清理,ttl默认30天</p>
+<h3 id="备份恢复">备份恢复：</h3>
+<pre><code>#从backup创建restore
+velero restore create ${RESTORE_NAME} --from-backup ${BACKUP_NAME}
+
+# 从backup创建restore，restore默认名为 ${BACKUP_NAME}-&lt;timestamp&gt;
+velero restore create --from-backup ${BACKUP_NAME}
+
+# 从schedule最新一次的backup创建restore
+velero restore create --from-schedule ${SCHEDULE_NAME}
+
+# 指定backup中的某些资源创建restore
+velero restore create --from-backup backup-2 --include-resources pod,secret
+
+# 恢复集群所有备份，（对已经存在的服务不会覆盖）
+velero restore create --from-backup all-ns-backup
+
+# 仅恢复default nginx-example命名空间
+velero restore create --from-backup all-ns-backup --include-namespaces default,nginx-example 
+
+# 将test-velero 命名空间资源恢复到test-velero-1下面
+velero restore create restore-for-test --from-backup everyday-1-20210203131802 --namespace-mappings test-velero:test-velero-1
+</code></pre><p>查看备份</p>
+<pre><code>velero  get  backup   #备份查看
+velero  get  schedule #查看定时备份
+velero  get  restore  #查看已有的恢复
+velero  get  plugins  #查看插件
+</code></pre><p>说明：</p>
+<p>velero restore create RESTORE_NAME &ndash;from-backup BACKUP_NAME &ndash;namespace-mappings old-ns-1:new-ns-1,old-ns-2:new-ns-2</p>
+<p>Velero可以将资源还原到与其备份来源不同的命名空间中。为此，请使用&ndash;namespace-mappings标志</p>
+<h2 id="velero备份实战">velero备份实战</h2>
+<h3 id="velero对集群进行一次完整备份">velero对集群进行一次完整备份：</h3>
+<pre><code>velero backup create  k8s-jf-test-all
+</code></pre><h3 id="设置4小时定时备份一次备份保留2个月">设置4小时定时备份一次，备份保留2个月：</h3>
+<pre><code># velero create schedule k8s-jf-cron-4h --exclude-namespaces test,tt --schedule=&quot;@every 4h&quot; --ttl 1440h
+Schedule &quot;k8s-jf-cron-4h&quot; created successfully.
+</code></pre><h3 id="同集群下手动从完整备份中恢复其中一个namespace到指定namespace">同集群下，手动从完整备份中恢复其中一个namespace到指定namespace</h3>
+<pre><code># velero restore create  k8s-jf-test-all-restore --from-backup  k8s-jf-test-all --include-namespaces test --namespace-mappings  test:test10000
+# velero restore describe k8s-jf-test-all-restore #查看恢复状态
+Name:         k8s-jf-test-all-restore
+Namespace:    velero
+Labels:       &lt;none&gt;
+Annotations:  &lt;none&gt;
+Phase:                                 InProgress
+Estimated total items to be restored:  141
+Items restored so far:                 123
+Started:    2021-09-07 10:47:44 +0800 CST
+Completed:  &lt;n/a&gt;
+Backup:  k8s-jf-test-all
+Namespaces:
+  Included:  all namespaces found in the backup
+  Excluded:  &lt;none&gt;
+Resources:
+  Included:        *
+  Excluded:        nodes, events, events.events.k8s.io, backups.velero.io, restores.velero.io, resticrepositories.velero.io
+  Cluster-scoped:  auto
+Namespace mappings:  test=test10000
+Label selector:  &lt;none&gt;
+Restore PVs:  auto
+Preserve Service NodePorts:  auto
+# velero restore get
+NAME                      BACKUP            STATUS       STARTED                         COMPLETED   ERRORS   WARNINGS   CREATED                         SELECTOR
+k8s-jf-test-all-restore   k8s-jf-test-all   InProgress   2021-09-07 10:47:44 +0800 CST   &lt;nil&gt;       0        0          2021-09-07 10:47:44 +0800 CST   &lt;none&gt;
+</code></pre><h3 id="跨集群将定期备份数据恢复">跨集群，将定期备份数据恢复</h3>
+<p>对于velero，跨集群需要保持2个集群使用的是同一个云厂商持久卷方案，这里我们统一使用minio，bucket都使用k8s-jf</p>
+<pre><code>velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&quot;true&quot;,s3Url=http://192.168.1.214:39000
+</code></pre><h3 id="查看已经备份数据">查看已经备份数据：</h3>
+<pre><code>#velero backup get
+NAME                                STATUS            ERRORS   WARNINGS   CREATED                         EXPIRES   STORAGE LOCATION   SELECTOR
+k8s-jf-all-cron-4h-20210907061716   Completed         0        0          2021-09-07 14:17:16 +0800 CST   59d       default            &lt;none&gt;
+k8s-jf-all-cron-4h-20210907021627   Completed         0        0          2021-09-07 10:16:27 +0800 CST   59d       default            &lt;none&gt;
+k8s-jf-test-all                     Completed         0        0          2021-09-07 10:19:45 +0800 CST   29d       default            &lt;none&gt;
+</code></pre><h3 id="恢复指定命名空间数据">恢复指定命名空间数据</h3>
+<p>这里从k8s-jf-all-cron-4h-20210907061716这个备份恢复argocd命名空间数据到本集群argocd-dev下</p>
+<pre><code># velero restore create  --from-backup  k8s-jf-all-cron-4h-20210907061716 --include-namespaces argocd --namespace-mappings  argocd:argocd-dev
+Restore request &quot;k8s-jf-all-cron-4h-20210907061716-20210907155450&quot; submitted successfully.
+Run `velero restore describe k8s-jf-all-cron-4h-20210907061716-20210907155450` or `velero restore logs k8s-jf-all-cron-4h-20210907061716-20210907155450` for more details.
+# velero restore get
+NAME                                               BACKUP                              STATUS       STARTED                         COMPLETED   ERRORS   WARNINGS   CREATED                         SELECTOR
+k8s-jf-all-cron-4h-20210907061716-20210907155450   k8s-jf-all-cron-4h-20210907061716   InProgress   2021-09-07 15:54:51 +0800 CST   &lt;nil&gt;       0        0          2021-09-07 15:54:51 +0800 CST   &lt;none&gt;
+# velero restore logs k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: argocd-application-controller-token-wv62v&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Restored 2 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=argocd-application-controller-token-wv62v namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: argocd-dex-server-token-9n4rs&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Restored 3 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=argocd-dex-server-token-9n4rs namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: argocd-secret&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Restored 4 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=argocd-secret namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: argocd-server-token-48vjd&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Restored 5 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=argocd-server-token-48vjd namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: cluster-192.168.1.210-3497337724&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Restored 6 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=cluster-192.168.1.210-3497337724 namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:23Z&quot; level=info msg=&quot;Attempting to restore Secret: cluster-192.168.1.214-1096681010&quot; logSource=&quot;pkg/restore/restore.go:1238&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+...
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;Restored 61 items out of an estimated total of 61 (estimate will change throughout the restore)&quot; logSource=&quot;pkg/restore/restore.go:664&quot; name=argocd-server namespace=argocd-dev progress= resource=services restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;Waiting for all restic restores to complete&quot; logSource=&quot;pkg/restore/restore.go:546&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;Done waiting for all restic restores to complete&quot; logSource=&quot;pkg/restore/restore.go:562&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;Waiting for all post-restore-exec hooks to complete&quot; logSource=&quot;pkg/restore/restore.go:566&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;Done waiting for all post-restore exec hooks to complete&quot; logSource=&quot;pkg/restore/restore.go:574&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&quot;2021-09-07T08:11:30Z&quot; level=info msg=&quot;restore completed&quot; logSource=&quot;pkg/controller/restore_controller.go:480&quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+
+</code></pre><p>通过日志可以看到原集群argo下数据已经恢复到现在集群argo-dev下</p>
+<h3 id="卸载velero">卸载velero</h3>
+<p>卸载velero，注意这里的uninstall不会删除namespace：</p>
+<pre><code># velero uninstall
+You are about to uninstall Velero.
+Are you sure you want to continue (Y/N)? y
+Velero uninstalled ⛵
+# kubectl delete namespace/velero clusterrolebinding/velero
+# kubectl delete crds -l component=velero
+</code></pre><h3 id="备份中遇到异常">备份中遇到异常</h3>
+<pre><code>time=&quot;2021-09-07T07:22:35Z&quot; level=info msg=&quot;Validating backup storage location&quot; backup-storage-location=default controller=backup-storage-location logSource=&quot;pkg/controller/backup_storage_location_controller.go:114&quot;
+time=&quot;2021-09-07T07:22:36Z&quot; level=info msg=&quot;Backup storage location is invalid, marking as unavailable&quot; backup-storage-location=default controller=backup-storage-location logSource=&quot;pkg/controller/backup_storage_location_controller.go:117&quot;
+time=&quot;2021-09-07T07:22:36Z&quot; level=error msg=&quot;Error listing backups in backup store&quot; backupLocation=default controller=backup-sync error=&quot;rpc error: code = Unknown desc = RequestError: send request failed\ncaused by: Get http://minio.velero.svc:9000/velero?delimiter=%2F&amp;list-type=2&amp;prefix=backups%2F: dial tcp: lookup minio.velero.svc on 10.96.0.10:53: no such host&quot; error.file=&quot;/go/src/velero-plugin-for-aws/velero-plugin-for-aws/object_store.go:361&quot; error.function=&quot;main.(*ObjectStore).ListCommonPrefixes&quot; logSource=&quot;pkg/controller/backup_sync_controller.go:182&quot;
+time=&quot;2021-09-07T07:22:36Z&quot; level=error msg=&quot;Current backup storage locations available/unavailable/unknown: 0/1/0, Backup storage location \&quot;default\&quot; is unavailable: rpc error: code = Unknown desc = RequestError: send request failed\ncaused by: Get http://minio.velero.svc:9000/velero?delimiter=%2F&amp;list-type=2&amp;prefix=: dial tcp: lookup minio.velero.svc on 10.96.0.10:53: no such host)&quot; controller=backup-storage-location logSource=&quot;pkg/controller/backup_storage_location_controller.go:164&quot;
+time=&quot;2021-09-07T07:22:36Z&quot; level=error msg=&quot;Current backup storage locations available/unavailable/unknown: 0/1/0)&quot; controller=backup-storage-location logSource=&quot;pkg/controller/backup_storage_location_controller.go:166&quot;
+</code></pre><p>说明CRD资源BackupStorageLocation信息以及对象存储账户和自己设置的不一致，由于重新安装没有清理干净旧的资源信息</p>
+<p>这里重新安装即可：</p>
+<pre><code># velero uninstall
+You are about to uninstall Velero.
+Are you sure you want to continue (Y/N)? y
+Velero uninstalled ⛵
+# kubectl delete namespace/velero clusterrolebinding/velero
+# kubectl delete crds -l component=velero
+# velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&quot;true&quot;,s3Url=http://192.168.1.214:39000
+# kubectl -n velero get backupstoragelocation default -o yaml #查看资源信息已经是自己想要的
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  creationTimestamp: &quot;2021-09-07T07:47:44Z&quot;
+  generation: 1
+  labels:
+    component: velero
+  name: default
+  namespace: velero
+  resourceVersion: &quot;1184696&quot;
+  selfLink: /apis/velero.io/v1/namespaces/velero/backupstoragelocations/default
+  uid: 39502e43-272e-461f-a114-a9ec955f0510
+spec:
+  config:
+    region: minio
+    s3ForcePathStyle: &quot;true&quot;
+    s3Url: http://192.168.1.214:39000
+  default: true
+  objectStorage:
+    bucket: k8s-jf
+  provider: aws
+status:
+  lastSyncedTime: &quot;2021-09-07T07:50:00Z&quot;
+  lastValidationTime: &quot;2021-09-07T07:50:00Z&quot;
+  phase: Available            
+</code></pre>
+    </div>
+
+    
+    
+<div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">wanzi</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+      2021-09-11
+      
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+
+
+    
+    
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    
+      <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/public/wechat-qr-code.jpeg">
+        <span>微信打赏</span>
+      </label>
+    
+      <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/public/alipay-qr-code.jpeg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div>
+
+    <footer class="post-footer">
+      <div class="post-tags">
+          <a href="https://wnote.com/tags/velero/">velero</a>
+          <a href="https://wnote.com/tags/k8s/">k8s</a>
+          <a href="https://wnote.com/tags/%E5%A4%87%E4%BB%BD/">备份</a>
+          <a href="https://wnote.com/tags/keepalived/">keepalived</a>
+          
+        </div>
+
+      
+      <nav class="post-nav">
+        
+        
+          <a class="next" href="/post/greenplum-docker-compose-installtion/">
+            <span class="next-text nav-default">如何快速搭建一套Greenplum集群</span>
+            <span class="prev-text nav-mobile">下一篇</span>
+            
+            <i class="iconfont">
+              <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="18" height="18">
+  <path d="M332.091514 74.487481l-75.369571 89.491197c-10.963703 12.998035-10.285251 32.864502 1.499144 44.378743l286.278095 300.375162L266.565125 819.058374c-11.338233 12.190647-11.035334 32.285311 0.638543 44.850487l80.46666 86.564541c11.680017 12.583596 30.356378 12.893658 41.662889 0.716314l377.434212-421.426145c11.332093-12.183484 11.041474-32.266891-0.657986-44.844348l-80.46666-86.564541c-1.772366-1.910513-3.706415-3.533476-5.750981-4.877077L373.270379 71.774697C361.493148 60.273758 343.054193 61.470003 332.091514 74.487481z"></path>
+</svg>
+
+            </i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+
+  
+  
+  
+  
+
+  
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+    
+
+  
+
+        </div>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="icon-links">
+  
+  
+    <a href="mailto:iwz2099@163.com" rel="me noopener" class="iconfont"
+      title="email" >
+      <svg class="icon" viewBox="0 0 1451 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="36" height="36">
+  <path d="M664.781909 681.472759 0 97.881301C0 3.997201 71.046997 0 71.046997 0L474.477909 0 961.649408 0 1361.641813 0C1361.641813 0 1432.688811 3.997201 1432.688811 97.881301L771.345323 681.472759C771.345323 681.472759 764.482731 685.154773 753.594283 688.65053L753.594283 688.664858C741.602731 693.493018 729.424896 695.068979 718.077952 694.839748 706.731093 695.068979 694.553173 693.493018 682.561621 688.664858L682.561621 688.65053C671.644501 685.140446 664.781909 681.472759 664.781909 681.472759L664.781909 681.472759ZM718.063616 811.603883C693.779541 811.016482 658.879232 802.205449 619.10784 767.734955 542.989056 701.759633 0 212.052267 0 212.052267L0 942.809523C0 942.809523 0 1024 83.726336 1024L682.532949 1024 753.579947 1024 1348.948139 1024C1432.688811 1024 1432.688811 942.809523 1432.688811 942.809523L1432.688811 212.052267C1432.688811 212.052267 893.138176 701.759633 817.019477 767.734955 777.248 802.205449 742.347691 811.03081 718.063616 811.603883L718.063616 811.603883Z"></path>
+</svg>
+
+    </a>
+
+
+<a href="https://wnote.com/index.xml" rel="noopener alternate" type="application/rss&#43;xml"
+    class="iconfont" title="rss" target="_blank">
+    <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="30" height="30">
+  <path d="M819.157333 1024C819.157333 574.592 449.408 204.8 0 204.8V0c561.706667 0 1024 462.293333 1024 1024h-204.842667zM140.416 743.04a140.8 140.8 0 0 1 140.501333 140.586667A140.928 140.928 0 0 1 140.074667 1024C62.72 1024 0 961.109333 0 883.626667s62.933333-140.544 140.416-140.586667zM678.784 1024h-199.04c0-263.210667-216.533333-479.786667-479.744-479.786667V345.173333c372.352 0 678.784 306.517333 678.784 678.826667z"></path>
+</svg>
+
+  </a>
+   
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - <a class="theme-link" href="https://github.com/xianmin/hugo-theme-jane">Jane</a>
+  </span>
+
+  <span class="copyright-year">
+    &copy;
+    
+      2018 -
+    2021
+    <span class="heart">
+      
+      <i class="iconfont">
+        <svg class="icon" viewBox="0 0 1025 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="14" height="14">
+  <path d="M1000.1 247.9c-15.5-37.3-37.6-70.6-65.7-98.9-54.4-54.8-125.8-85-201-85-85.7 0-166 39-221.4 107.4C456.6 103 376.3 64 290.6 64c-75.1 0-146.5 30.4-201.1 85.6-28.2 28.5-50.4 61.9-65.8 99.3-16 38.8-24 79.9-23.6 122.2 0.7 91.7 40.1 177.2 108.1 234.8 3.1 2.6 6 5.1 8.9 7.8 14.9 13.4 58 52.8 112.6 102.7 93.5 85.5 209.9 191.9 257.5 234.2 7 6.1 15.8 9.5 24.9 9.5 9.2 0 18.1-3.4 24.9-9.5 34.5-30.7 105.8-95.9 181.4-165 74.2-67.8 150.9-138 195.8-178.2 69.5-57.9 109.6-144.4 109.9-237.3 0.1-42.5-8-83.6-24-122.2z"
+   fill="#8a8a8a"></path>
+</svg>
+
+      </i>
+    </span><span class="author">
+        wanzi
+        
+      </span></span>
+
+  
+  
+
+  
+    <span>
+      京ICP备2021004162号-1
+    </span>
+  
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont">
+        
+        <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="35" height="35">
+  <path d="M510.866688 227.694839 95.449397 629.218702l235.761562 0-2.057869 328.796468 362.40389 0L691.55698 628.188232l241.942331-3.089361L510.866688 227.694839zM63.840492 63.962777l894.052392 0 0 131.813095L63.840492 195.775872 63.840492 63.962777 63.840492 63.962777zM63.840492 63.962777"></path>
+</svg>
+
+      </i>
+    </div>
+  </div>
+  
+<script type="text/javascript" src="/lib/jquery/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout-1.0.1.min.js"></script>
+
+
+
+
+<script type="text/javascript" src="/js/main.638251f4230630f0335d8c6748e53a96f94b72670920b60c09a56fdc8bece214.js" integrity="sha256-Y4JR9CMGMPAzXYxnSOU6lvlLcmcJILYMCaVv3Ivs4hQ=" crossorigin="anonymous"></script>
+
+
+
+  <script type="text/javascript">
+    window.MathJax = {
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+
+
+
+
+
+
+
+
+
+  
+    <script type="text/javascript" src="/js/load-photoswipe.js"></script>
+    <script type="text/javascript" src="/lib/photoswipe/photoswipe.min.js"></script>
+    <script type="text/javascript" src="/lib/photoswipe/photoswipe-ui-default.min.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

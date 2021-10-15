@@ -21,7 +21,7 @@ mathjax: true    # 打开 mathjax
 前面我们介绍了Argo Workflow如何安装与触发任务，这一篇主要介绍一个新工具：
 
 ## ArgoEvents是什么？
-Argo Events是一个事件驱动的 Kubernetes 工作流自动化框架。它允许您在 20 多个不同的事件（例如 webhook、S3 drop、cronjob、消息队列-例如 Kafka、GCP PubSub、SNS、 SQS等）
+Argo Events是一个事件驱动的 Kubernetes 工作流自动化框架。它支持20 多种不同的事件（例如 webhook、S3 drop、cronjob、消息队列-例如 Kafka、GCP PubSub、SNS、 SQS等）
 
 ### 特性：
 - 支持来自[20多个事件源](https://argoproj.github.io/argo-events/concepts/event_source/)和10多个[触发器的事件](https://argoproj.github.io/argo-events/concepts/trigger/)。

@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-cn" itemscope itemtype="http://schema.org/WebPage">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>kubeadm部署高可用kubernetes集群 - 丸子有记</title>
+  
+
+<meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes"/>
+
+<meta name="MobileOptimized" content="width"/>
+<meta name="HandheldFriendly" content="true"/>
+
+
+<meta name="applicable-device" content="pc,mobile">
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="author" content="wanzi" /><meta name="description" content="kubeadm部署高可用kubernetes集群" />
+
+  <meta name="keywords" content="丸子有记, 丸子笔记, 丸子日记" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.68.3" />
+
+
+<link rel="canonical" href="https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/" />
+
+
+
+
+
+<link rel="icon" href="/favicon.ico" />
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/sass/jane.min.f1e506a781bf25d33ffc18aa6b4e972a965c58049d27d4f92b7db2e9bf28e4bf.css" integrity="sha256-8eUGp4G/JdM//Biqa06XKpZcWASdJ9T5K32y6b8o5L8=" media="screen" crossorigin="anonymous">
+
+
+
+
+
+<meta property="og:title" content="kubeadm部署高可用kubernetes集群" />
+<meta property="og:description" content="kubeadm部署高可用kubernetes集群" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/" />
+<meta property="article:published_time" content="2021-08-15T17:22:42+08:00" />
+<meta property="article:modified_time" content="2021-08-15T17:22:42+08:00" />
+<meta itemprop="name" content="kubeadm部署高可用kubernetes集群">
+<meta itemprop="description" content="kubeadm部署高可用kubernetes集群">
+<meta itemprop="datePublished" content="2021-08-15T17:22:42&#43;08:00" />
+<meta itemprop="dateModified" content="2021-08-15T17:22:42&#43;08:00" />
+<meta itemprop="wordCount" content="2877">
+
+
+
+<meta itemprop="keywords" content="kubeadm,k8s,haproxy,keepalived," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="kubeadm部署高可用kubernetes集群"/>
+<meta name="twitter:description" content="kubeadm部署高可用kubernetes集群"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+
+
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">丸子有记</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/">主页</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/post/">归档</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/categories/">分类</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/tags/">标签</a>
+          
+        
+      </li><li class="mobile-menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/about/">关于</a>
+          
+        
+      </li>
+    
+
+    
+  </ul>
+</nav>
+
+
+  
+    
+
+
+
+
+
+
+  <link rel="stylesheet" href="/lib/photoswipe/photoswipe.min.css" />
+  <link rel="stylesheet" href="/lib/photoswipe/default-skin/default-skin.min.css" />
+
+
+
+
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+<div class="pswp__bg"></div>
+
+<div class="pswp__scroll-wrap">
+    
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    
+    <div class="pswp__ui pswp__ui--hidden">
+    <div class="pswp__top-bar">
+      
+      <div class="pswp__counter"></div>
+      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+      <button class="pswp__button pswp__button--share" title="Share"></button>
+      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+      
+      
+      <div class="pswp__preloader">
+        <div class="pswp__preloader__icn">
+          <div class="pswp__preloader__cut">
+            <div class="pswp__preloader__donut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+      <div class="pswp__share-tooltip"></div>
+    </div>
+    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+    </button>
+    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+    </button>
+    <div class="pswp__caption">
+      <div class="pswp__caption__center"></div>
+    </div>
+    </div>
+    </div>
+</div>
+
+  
+
+  
+
+  
+
+  <header id="header" class="header container">
+    <div class="logo-wrapper">
+  <a href="/" class="logo">
+    
+      丸子有记
+    
+  </a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/">主页</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/post/">归档</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/categories/">分类</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/tags/">标签</a>
+          
+
+        
+
+      </li>
+    
+        <li class="menu-item">
+        
+          
+          
+            <a class="menu-item-link" href="https://wnote.com/about/">关于</a>
+          
+
+        
+
+      </li>
+    
+
+    
+    
+
+    
+  </ul>
+</nav>
+
+  </header>
+
+  <div id="mobile-panel">
+    <main id="main" class="main bg-llight">
+      <div class="content-wrapper">
+        <div id="content" class="content container">
+          <article class="post bg-white">
+    
+    <header class="post-header">
+      <h1 class="post-title">kubeadm部署高可用kubernetes集群</h1>
+      
+      <div class="post-meta">
+        <time datetime="2021-08-15" class="post-time">
+          2021-08-15
+        </time>
+        <div class="post-category">
+            <a href="https://wnote.com/categories/kubernetes/"> kubernetes </a>
+            
+          </div>
+        <span class="more-meta"> 约 2877 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+
+        
+        
+
+        
+        
+      </div>
+    </header>
+
+    
+    
+<div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一基本环境设置">一、基本环境设置</a>
+      <ul>
+        <li><a href="#1安装docker并增加hosts">1、安装docker并增加hosts</a></li>
+        <li><a href="#2配置hosts">2、配置hosts</a></li>
+        <li><a href="#3禁用防火墙并设置selinux">3、禁用防火墙并设置selinux</a></li>
+        <li><a href="#4关闭swap">4、关闭swap</a></li>
+        <li><a href="#5安装所有节点的kubeadm和kubeletipvsadm">5、安装所有节点的kubeadm和kubelet、ipvsadm</a></li>
+      </ul>
+    </li>
+    <li><a href="#二keepalived配合haproxy实现负载均衡器高可用">二、keepalived配合haproxy实现负载均衡器高可用</a>
+      <ul>
+        <li><a href="#1keepalived配置">1、keepalived配置</a></li>
+        <li><a href="#2haproxy配置">2、haproxy配置</a></li>
+      </ul>
+    </li>
+    <li><a href="#三kubeadm初始化k8s集群">三、kubeadm初始化k8s集群</a>
+      <ul>
+        <li><a href="#1初始化第一台master">1、初始化第一台master</a></li>
+        <li><a href="#2新master节点加入集群">2、新master节点加入集群</a></li>
+        <li><a href="#3新node节点加入集群">3、新node节点加入集群</a></li>
+        <li><a href="#4安装flannel网络组件">4、安装flannel网络组件</a></li>
+        <li><a href="#5安装ingress">5、安装ingress</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+
+    
+    <div class="post-content">
+      <p>为了后便后期验证私有化部署
+，最近内网环境需要快速搭建一套k8s集群，由于之前对于规模比较大的集群，我一般采用kubeasz和kubespray来搞定，这次对于小环境集群，直接用kubeadm部署会更加高效。</p>
+<p>下面记录kubeadm部署过程：</p>
+<p>集群节点：</p>
+<pre><code>192.168.1.206 sd-cluster-206 node
+192.168.1.207 sd-cluster-207 master,etcd
+192.168.1.208 sd-cluster-208 master,etcd,haproxy,keepalived
+192.168.1.209 sd-cluster-209 master,etcd,haproxy,keepalived
+</code></pre><p>镜像版本：</p>
+<pre><code>docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:1.6.5
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.4.3-0
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2
+docker pull registry.cn-shanghai.aliyuncs.com/gcr-k8s/flannel:v0.14.0
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/nginx-ingress-controller:v0.48.1
+</code></pre><h2 id="一基本环境设置">一、基本环境设置</h2>
+<h3 id="1安装docker并增加hosts">1、安装docker并增加hosts</h3>
+<pre><code>yum install -y yum-utils device-mapper-persistent-data lvm2 git
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum install docker-ce -y
+systemctl  start docker
+systemctl  enable docker
+systemctl  status docker
+</code></pre><h3 id="2配置hosts">2、配置hosts</h3>
+<pre><code>cat  &gt;&gt;  /etc/hosts &lt;&lt; hhhh
+192.168.1.207 sd-cluster-207
+192.168.1.208 sd-cluster-208
+192.168.1.209 sd-cluster-209
+hhhh
+</code></pre><h3 id="3禁用防火墙并设置selinux">3、禁用防火墙并设置selinux</h3>
+<pre><code>systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0
+sed -i 's/SELINUX=permissive/SELINUX=disabled/' /etc/sysconfig/selinux
+</code></pre><h3 id="4关闭swap">4、关闭swap</h3>
+<p>Kubernetes 1.8开始要求关闭系统的Swap，如果不关闭，默认配置下kubelet将无法启动。方法一,通过kubelet的启动参数–fail-swap-on=false更改这个限制。方法二,关闭系统的Swap。</p>
+<pre><code># swapoff -a
+</code></pre><p>修改/etc/fstab文件，注释掉SWAP的自动挂载，使用free -m确认swap已经关闭。</p>
+<h3 id="5安装所有节点的kubeadm和kubeletipvsadm">5、安装所有节点的kubeadm和kubelet、ipvsadm</h3>
+<p>参考：https://developer.aliyun.com/mirror/kubernetes</p>
+<pre><code>cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+yum install -y --nogpgcheck  kubelet-1.18.3 kubeadm-1.18.3 ipvsadm 
+systemctl enable kubelet &amp;&amp; systemctl start kubelet
+</code></pre><p>ps: 由于官网未开放同步方式, 可能会有索引gpg检查失败的情况, 这时请用 yum install -y &ndash;nogpgcheck kubelet kubeadm kubectl 安装</p>
+<p>增加ipvsadm，如果重新开机，需要重新加载（可以写在 /etc/rc.local 中开机自动加载）</p>
+<pre><code>cat &lt;&lt;EOF &gt;&gt; /etc/rc.local
+modprobe ip_vs
+modprobe ip_vs_rr
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+modprobe nf_conntrack_ipv4
+EOF
+chmod +x /etc/rc.local
+</code></pre><h2 id="二keepalived配合haproxy实现负载均衡器高可用">二、keepalived配合haproxy实现负载均衡器高可用</h2>
+<pre><code>yum -y install keepalived haproxy
+</code></pre><h3 id="1keepalived配置">1、keepalived配置</h3>
+<p>192.168.1.208配置</p>
+<pre><code>vrrp_script chk_ha {
+	script &quot;killall -0 haproxy&quot;  
+	interval 2 		
+	weight -20 					
+}
+
+vrrp_instance VI_1 {
+	state MASTER
+    interface bond0
+	virtual_router_id 33
+	mcast_src_ip 192.168.1.208
+	priority 100 		
+	nopreempt 			
+	advert_int 1 				
+	authentication {
+		auth_type PASS
+		auth_pass hak8s
+	}
+
+	track_script {
+		chk_ha			## 执行haproxy监测
+	}
+
+	virtual_ipaddress {
+		192.168.1.205/24		##VIP 
+	}
+}
+</code></pre><p>192.168.1.209配置</p>
+<pre><code>vrrp_script chk_ha {
+	script &quot;killall -0 haproxy&quot;
+	interval 2
+	weight -20
+}
+vrrp_instance VI_1 {
+	state BACKUP
+	interface bond0
+	virtual_router_id 33
+	mcast_src_ip 192.168.1.209
+	priority 90
+	advert_int 1
+	authentication {
+		auth_type PASS
+		auth_pass hak8s
+	}
+	track_script {
+		chk_ha
+	}
+	virtual_ipaddress {
+		192.168.1.205/24
+	}
+}
+</code></pre><h3 id="2haproxy配置">2、haproxy配置</h3>
+<p>208和209两个master的haproxy配置一样：</p>
+<pre><code>global
+    log /dev/log local0
+    maxconn 65535
+    chroot /var/lib/haproxy
+    pidfile /var/run/haproxy.pid
+    stats socket /var/lib/haproxy/stats
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log global
+    retries 3
+    option redispatch
+    option dontlognull
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
+
+frontend k8s-apiserver
+    bind *:8443
+    mode tcp
+    balance roundrobin
+    server sd-cluster-04 192.168.1.207:6443 weight 5 check inter 2000 rise 2 fall 3
+    server sd-cluster-05 192.168.1.208:6443 weight 3 check inter 2000 rise 2 fall 3
+    server sd-cluster-06 192.168.1.209:6443 weight 3 check inter 2000 rise 2 fall 3
+</code></pre><p>至此，haproxy高可用已经搭建完成，验证方法，直接关闭208的keepalived服务，看vip是否飘逸到209机器上。</p>
+<h2 id="三kubeadm初始化k8s集群">三、kubeadm初始化k8s集群</h2>
+<h3 id="1初始化第一台master">1、初始化第一台master</h3>
+<p>kubeadm-config.yaml配置</p>
+<pre><code>#kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta2
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: abcdef.0123456789abcdef
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.1.208
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  name: sd-cluster-208
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+---
+apiServer:
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta2
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: &quot;192.168.1.208:8443&quot;
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: registry.cn-hangzhou.aliyuncs.com/google_containers
+kind: ClusterConfiguration
+kubernetesVersion: v1.18.3
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+scheduler: {}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+</code></pre><pre><code># kubeadm init --config kubeadm-config.yaml --upload-certs
+W0828 03:02:37.249435   17451 configset.go:202] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+[init] Using Kubernetes version: v1.18.3
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected &quot;cgroupfs&quot; as the Docker cgroup driver. The recommended driver is &quot;systemd&quot;. Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[kubelet-start] Writing kubelet environment file with flags to file &quot;/var/lib/kubelet/kubeadm-flags.env&quot;
+[kubelet-start] Writing kubelet configuration to file &quot;/var/lib/kubelet/config.yaml&quot;
+[kubelet-start] Starting the kubelet
+[certs] Using certificateDir folder &quot;/etc/kubernetes/pki&quot;
+[certs] Generating &quot;ca&quot; certificate and key
+[certs] Generating &quot;apiserver&quot; certificate and key
+[certs] apiserver serving cert is signed for DNS names [sd-cluster-208 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.1.208 192.168.1.205]
+[certs] Generating &quot;apiserver-kubelet-client&quot; certificate and key
+[certs] Generating &quot;front-proxy-ca&quot; certificate and key
+[certs] Generating &quot;front-proxy-client&quot; certificate and key
+[certs] Generating &quot;etcd/ca&quot; certificate and key
+[certs] Generating &quot;etcd/server&quot; certificate and key
+[certs] etcd/server serving cert is signed for DNS names [sd-cluster-208 localhost] and IPs [192.168.1.208 127.0.0.1 ::1]
+[certs] Generating &quot;etcd/peer&quot; certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [sd-cluster-208 localhost] and IPs [192.168.1.208 127.0.0.1 ::1]
+[certs] Generating &quot;etcd/healthcheck-client&quot; certificate and key
+[certs] Generating &quot;apiserver-etcd-client&quot; certificate and key
+[certs] Generating &quot;sa&quot; key and public key
+[kubeconfig] Using kubeconfig folder &quot;/etc/kubernetes&quot;
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &quot;admin.conf&quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &quot;kubelet.conf&quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &quot;controller-manager.conf&quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &quot;scheduler.conf&quot; kubeconfig file
+[control-plane] Using manifest folder &quot;/etc/kubernetes/manifests&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-apiserver&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-controller-manager&quot;
+W0828 03:02:43.787797   17451 manifests.go:225] the default kube-apiserver authorization-mode is &quot;Node,RBAC&quot;; using &quot;Node,RBAC&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-scheduler&quot;
+W0828 03:02:43.789895   17451 manifests.go:225] the default kube-apiserver authorization-mode is &quot;Node,RBAC&quot;; using &quot;Node,RBAC&quot;
+[etcd] Creating static Pod manifest for local etcd in &quot;/etc/kubernetes/manifests&quot;
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory &quot;/etc/kubernetes/manifests&quot;. This can take up to 4m0s
+[apiclient] All control plane components are healthy after 23.015352 seconds
+[upload-config] Storing the configuration used in ConfigMap &quot;kubeadm-config&quot; in the &quot;kube-system&quot; Namespace
+[kubelet] Creating a ConfigMap &quot;kubelet-config-1.18&quot; in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Storing the certificates in Secret &quot;kubeadm-certs&quot; in the &quot;kube-system&quot; Namespace
+[upload-certs] Using certificate key:
+0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+[mark-control-plane] Marking the node sd-cluster-208 as control-plane by adding the label &quot;node-role.kubernetes.io/master=''&quot;
+[mark-control-plane] Marking the node sd-cluster-208 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+[bootstrap-token] Using token: abcdef.0123456789abcdef
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to get nodes
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the &quot;cluster-info&quot; ConfigMap in the &quot;kube-public&quot; namespace
+[kubelet-finalize] Updating &quot;/etc/kubernetes/kubelet.conf&quot; to point to a rotatable kubelet client certificate and key
+[addons] Applied essential addon: CoreDNS
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run &quot;kubectl apply -f [podnetwork].yaml&quot; with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of the control-plane node running the following command on each as root:
+
+  kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486 \
+    --control-plane --certificate-key 0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+
+Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
+&quot;kubeadm init phase upload-certs --upload-certs&quot; to reload certs afterward.
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486
+</code></pre><p>配置master节点kubeconfig</p>
+<pre><code>mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+</code></pre><h3 id="2新master节点加入集群">2、新master节点加入集群</h3>
+<pre><code># kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+&gt;     --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486 \
+&gt;     --control-plane --certificate-key 0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected &quot;cgroupfs&quot; as the Docker cgroup driver. The recommended driver is &quot;systemd&quot;. Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[preflight] Running pre-flight checks before initializing the new control plane instance
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[download-certs] Downloading the certificates in Secret &quot;kubeadm-certs&quot; in the &quot;kube-system&quot; Namespace
+[certs] Using certificateDir folder &quot;/etc/kubernetes/pki&quot;
+[certs] Generating &quot;front-proxy-client&quot; certificate and key
+[certs] Generating &quot;etcd/peer&quot; certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [sd-cluster-209 localhost] and IPs [192.168.1.209 127.0.0.1 ::1]
+[certs] Generating &quot;etcd/healthcheck-client&quot; certificate and key
+[certs] Generating &quot;apiserver-etcd-client&quot; certificate and key
+[certs] Generating &quot;etcd/server&quot; certificate and key
+[certs] etcd/server serving cert is signed for DNS names [sd-cluster-209 localhost] and IPs [192.168.1.209 127.0.0.1 ::1]
+[certs] Generating &quot;apiserver&quot; certificate and key
+[certs] apiserver serving cert is signed for DNS names [sd-cluster-209 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.1.209 192.168.1.205]
+[certs] Generating &quot;apiserver-kubelet-client&quot; certificate and key
+[certs] Valid certificates and keys now exist in &quot;/etc/kubernetes/pki&quot;
+[certs] Using the existing &quot;sa&quot; key
+[kubeconfig] Generating kubeconfig files
+[kubeconfig] Using kubeconfig folder &quot;/etc/kubernetes&quot;
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &quot;admin.conf&quot; kubeconfig file
+[kubeconfig] Writing &quot;controller-manager.conf&quot; kubeconfig file
+[kubeconfig] Writing &quot;scheduler.conf&quot; kubeconfig file
+[control-plane] Using manifest folder &quot;/etc/kubernetes/manifests&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-apiserver&quot;
+W0828 03:12:57.996811   48328 manifests.go:225] the default kube-apiserver authorization-mode is &quot;Node,RBAC&quot;; using &quot;Node,RBAC&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-controller-manager&quot;
+W0828 03:12:58.009390   48328 manifests.go:225] the default kube-apiserver authorization-mode is &quot;Node,RBAC&quot;; using &quot;Node,RBAC&quot;
+[control-plane] Creating static Pod manifest for &quot;kube-scheduler&quot;
+W0828 03:12:58.011318   48328 manifests.go:225] the default kube-apiserver authorization-mode is &quot;Node,RBAC&quot;; using &quot;Node,RBAC&quot;
+[check-etcd] Checking that the etcd cluster is healthy
+[kubelet-start] Downloading configuration for the kubelet from the &quot;kubelet-config-1.18&quot; ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file &quot;/var/lib/kubelet/config.yaml&quot;
+[kubelet-start] Writing kubelet environment file with flags to file &quot;/var/lib/kubelet/kubeadm-flags.env&quot;
+[kubelet-start] Starting the kubelet
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+[etcd] Announced new etcd member joining to the existing etcd cluster
+[etcd] Creating static Pod manifest for &quot;etcd&quot;
+[etcd] Waiting for the new etcd member to join the cluster. This can take up to 40s
+{&quot;level&quot;:&quot;warn&quot;,&quot;ts&quot;:&quot;2021-08-28T03:13:15.215-0400&quot;,&quot;caller&quot;:&quot;clientv3/retry_interceptor.go:61&quot;,&quot;msg&quot;:&quot;retrying of unary invoker failed&quot;,&quot;target&quot;:&quot;passthrough:///https://192.168.1.209:2379&quot;,&quot;attempt&quot;:0,&quot;error&quot;:&quot;rpc error: code = DeadlineExceeded desc = context deadline exceeded&quot;}
+[upload-config] Storing the configuration used in ConfigMap &quot;kubeadm-config&quot; in the &quot;kube-system&quot; Namespace
+[mark-control-plane] Marking the node sd-cluster-209 as control-plane by adding the label &quot;node-role.kubernetes.io/master=''&quot;
+[mark-control-plane] Marking the node sd-cluster-209 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+
+This node has joined the cluster and a new control plane instance was created:
+
+* Certificate signing request was sent to apiserver and approval was received.
+* The Kubelet was informed of the new secure connection details.
+* Control plane (master) label and taint were applied to the new node.
+* The Kubernetes control plane instances scaled up.
+* A new etcd member was added to the local/stacked etcd cluster.
+
+To start administering your cluster from this node, you need to run the following as a regular user:
+
+	mkdir -p $HOME/.kube
+	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+	sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Run 'kubectl get nodes' to see this node join the cluster.
+</code></pre><h3 id="3新node节点加入集群">3、新node节点加入集群</h3>
+<pre><code>kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486
+</code></pre><h3 id="4安装flannel网络组件">4、安装flannel网络组件</h3>
+<pre><code># wget http://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+# sed -i 's#quay.io/coreos/flannel:v0.14.0#registry.cn-shanghai.aliyuncs.com/gcr-k8s/flannel:v0.14.0#g' kube-flannel.yml
+# kubectl apply -f kube-flannel.yml -n kube-system
+podsecuritypolicy.policy/psp.flannel.unprivileged created
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.apps/kube-flannel-ds created
+# kubectl get pod -n kube-system |grep flannel
+kube-flannel-ds-gtdl8                    1/1     Running   0          24s
+kube-flannel-ds-jtndz                    1/1     Running   0          24s
+kube-flannel-ds-nd79b                    1/1     Running   0          24s
+</code></pre><h3 id="5安装ingress">5、安装ingress</h3>
+<pre><code>docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/nginx-ingress-controller:v0.48.1
+
+wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-3.35.0/ingress-nginx-3.35.0.tgz
+tar zxvf helm-chart-3.35.0.tar.gz
+cd ingress-nginx
+vim values.yaml  #更新镜像为上面的国内阿里镜像版本
+
+#helm install ingress-nginx --namespace ingress-nginx  . -n ingress-nginx
+NAME: ingress-nginx
+LAST DEPLOYED: Tue Aug 31 17:02:28 2021
+NAMESPACE: ingress-nginx
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The ingress-nginx controller has been installed.
+Get the application URL by running these commands:
+  export HTTP_NODE_PORT=$(kubectl --namespace ingress-nginx get services -o jsonpath=&quot;{.spec.ports[0].nodePort}&quot; ingress-nginx-controller)
+  export HTTPS_NODE_PORT=$(kubectl --namespace ingress-nginx get services -o jsonpath=&quot;{.spec.ports[1].nodePort}&quot; ingress-nginx-controller)
+  export NODE_IP=$(kubectl --namespace ingress-nginx get nodes -o jsonpath=&quot;{.items[0].status.addresses[1].address}&quot;)
+
+  echo &quot;Visit http://$NODE_IP:$HTTP_NODE_PORT to access your application via HTTP.&quot;
+  echo &quot;Visit https://$NODE_IP:$HTTPS_NODE_PORT to access your application via HTTPS.&quot;
+
+An example Ingress that makes use of the controller:
+
+  apiVersion: networking.k8s.io/v1beta1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    name: example
+    namespace: foo
+  spec:
+    rules:
+      - host: www.example.com
+        http:
+          paths:
+            - backend:
+                serviceName: exampleService
+                servicePort: 80
+              path: /
+    # This section is only required if TLS is to be enabled for the Ingress
+    tls:
+        - hosts:
+            - www.example.com
+          secretName: example-tls
+
+If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
+
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: example-tls
+    namespace: foo
+  data:
+    tls.crt: &lt;base64 encoded cert&gt;
+    tls.key: &lt;base64 encoded key&gt;
+  type: kubernetes.io/tls
+</code></pre><p>对于新建Ingress参考如下设置：</p>
+<pre><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-nginx
+spec:
+  rules:
+    - host: &quot;my-nginx.test.com&quot;
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: my-nginx
+              servicePort: 8080
+</code></pre><p>至此，kubeadm部署kubernetes高可用集群完成</p>
+
+    </div>
+
+    
+    
+<div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">wanzi</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+      2021-08-15
+      
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+
+
+    
+    
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    
+      <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/public/wechat-qr-code.jpeg">
+        <span>微信打赏</span>
+      </label>
+    
+      <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/public/alipay-qr-code.jpeg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div>
+
+    <footer class="post-footer">
+      <div class="post-tags">
+          <a href="https://wnote.com/tags/kubeadm/">kubeadm</a>
+          <a href="https://wnote.com/tags/k8s/">k8s</a>
+          <a href="https://wnote.com/tags/haproxy/">haproxy</a>
+          <a href="https://wnote.com/tags/keepalived/">keepalived</a>
+          
+        </div>
+
+      
+      <nav class="post-nav">
+        
+          <a class="prev" href="/post/kubernetes-gpushare-aliyun/">
+            
+            <i class="iconfont">
+              <svg  class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="18" height="18">
+  <path d="M691.908486 949.511495l75.369571-89.491197c10.963703-12.998035 10.285251-32.864502-1.499144-44.378743L479.499795 515.267417 757.434875 204.940602c11.338233-12.190647 11.035334-32.285311-0.638543-44.850487l-80.46666-86.564541c-11.680017-12.583596-30.356378-12.893658-41.662889-0.716314L257.233596 494.235404c-11.332093 12.183484-11.041474 32.266891 0.657986 44.844348l80.46666 86.564541c1.772366 1.910513 3.706415 3.533476 5.750981 4.877077l306.620399 321.703933C662.505829 963.726242 680.945807 962.528973 691.908486 949.511495z"></path>
+</svg>
+
+            </i>
+            <span class="prev-text nav-default">阿里云共享GPU方案测试</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        
+          <a class="next" href="/post/linux-dns-privatezone-bind9-dnsmasq/">
+            <span class="next-text nav-default">阿里云PrivateZone&#43;Bind9&#43;Dnsmasq实现内部DNS</span>
+            <span class="prev-text nav-mobile">下一篇</span>
+            
+            <i class="iconfont">
+              <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="18" height="18">
+  <path d="M332.091514 74.487481l-75.369571 89.491197c-10.963703 12.998035-10.285251 32.864502 1.499144 44.378743l286.278095 300.375162L266.565125 819.058374c-11.338233 12.190647-11.035334 32.285311 0.638543 44.850487l80.46666 86.564541c11.680017 12.583596 30.356378 12.893658 41.662889 0.716314l377.434212-421.426145c11.332093-12.183484 11.041474-32.266891-0.657986-44.844348l-80.46666-86.564541c-1.772366-1.910513-3.706415-3.533476-5.750981-4.877077L373.270379 71.774697C361.493148 60.273758 343.054193 61.470003 332.091514 74.487481z"></path>
+</svg>
+
+            </i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+
+  
+  
+  
+  
+
+  
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+    
+
+  
+
+        </div>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="icon-links">
+  
+  
+    <a href="mailto:iwz2099@163.com" rel="me noopener" class="iconfont"
+      title="email" >
+      <svg class="icon" viewBox="0 0 1451 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="36" height="36">
+  <path d="M664.781909 681.472759 0 97.881301C0 3.997201 71.046997 0 71.046997 0L474.477909 0 961.649408 0 1361.641813 0C1361.641813 0 1432.688811 3.997201 1432.688811 97.881301L771.345323 681.472759C771.345323 681.472759 764.482731 685.154773 753.594283 688.65053L753.594283 688.664858C741.602731 693.493018 729.424896 695.068979 718.077952 694.839748 706.731093 695.068979 694.553173 693.493018 682.561621 688.664858L682.561621 688.65053C671.644501 685.140446 664.781909 681.472759 664.781909 681.472759L664.781909 681.472759ZM718.063616 811.603883C693.779541 811.016482 658.879232 802.205449 619.10784 767.734955 542.989056 701.759633 0 212.052267 0 212.052267L0 942.809523C0 942.809523 0 1024 83.726336 1024L682.532949 1024 753.579947 1024 1348.948139 1024C1432.688811 1024 1432.688811 942.809523 1432.688811 942.809523L1432.688811 212.052267C1432.688811 212.052267 893.138176 701.759633 817.019477 767.734955 777.248 802.205449 742.347691 811.03081 718.063616 811.603883L718.063616 811.603883Z"></path>
+</svg>
+
+    </a>
+
+
+<a href="https://wnote.com/index.xml" rel="noopener alternate" type="application/rss&#43;xml"
+    class="iconfont" title="rss" target="_blank">
+    <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="30" height="30">
+  <path d="M819.157333 1024C819.157333 574.592 449.408 204.8 0 204.8V0c561.706667 0 1024 462.293333 1024 1024h-204.842667zM140.416 743.04a140.8 140.8 0 0 1 140.501333 140.586667A140.928 140.928 0 0 1 140.074667 1024C62.72 1024 0 961.109333 0 883.626667s62.933333-140.544 140.416-140.586667zM678.784 1024h-199.04c0-263.210667-216.533333-479.786667-479.744-479.786667V345.173333c372.352 0 678.784 306.517333 678.784 678.826667z"></path>
+</svg>
+
+  </a>
+   
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://gohugo.io">Hugo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - <a class="theme-link" href="https://github.com/xianmin/hugo-theme-jane">Jane</a>
+  </span>
+
+  <span class="copyright-year">
+    &copy;
+    
+      2018 -
+    2021
+    <span class="heart">
+      
+      <i class="iconfont">
+        <svg class="icon" viewBox="0 0 1025 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="14" height="14">
+  <path d="M1000.1 247.9c-15.5-37.3-37.6-70.6-65.7-98.9-54.4-54.8-125.8-85-201-85-85.7 0-166 39-221.4 107.4C456.6 103 376.3 64 290.6 64c-75.1 0-146.5 30.4-201.1 85.6-28.2 28.5-50.4 61.9-65.8 99.3-16 38.8-24 79.9-23.6 122.2 0.7 91.7 40.1 177.2 108.1 234.8 3.1 2.6 6 5.1 8.9 7.8 14.9 13.4 58 52.8 112.6 102.7 93.5 85.5 209.9 191.9 257.5 234.2 7 6.1 15.8 9.5 24.9 9.5 9.2 0 18.1-3.4 24.9-9.5 34.5-30.7 105.8-95.9 181.4-165 74.2-67.8 150.9-138 195.8-178.2 69.5-57.9 109.6-144.4 109.9-237.3 0.1-42.5-8-83.6-24-122.2z"
+   fill="#8a8a8a"></path>
+</svg>
+
+      </i>
+    </span><span class="author">
+        wanzi
+        
+      </span></span>
+
+  
+  
+
+  
+    <span>
+      京ICP备2021004162号-1
+    </span>
+  
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont">
+        
+        <svg class="icon" viewBox="0 0 1024 1024" version="1.1"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  width="35" height="35">
+  <path d="M510.866688 227.694839 95.449397 629.218702l235.761562 0-2.057869 328.796468 362.40389 0L691.55698 628.188232l241.942331-3.089361L510.866688 227.694839zM63.840492 63.962777l894.052392 0 0 131.813095L63.840492 195.775872 63.840492 63.962777 63.840492 63.962777zM63.840492 63.962777"></path>
+</svg>
+
+      </i>
+    </div>
+  </div>
+  
+<script type="text/javascript" src="/lib/jquery/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout-1.0.1.min.js"></script>
+
+
+
+
+<script type="text/javascript" src="/js/main.638251f4230630f0335d8c6748e53a96f94b72670920b60c09a56fdc8bece214.js" integrity="sha256-Y4JR9CMGMPAzXYxnSOU6lvlLcmcJILYMCaVv3Ivs4hQ=" crossorigin="anonymous"></script>
+
+
+
+  <script type="text/javascript">
+    window.MathJax = {
+      showProcessingMessages: false,
+      messageStyle: 'none'
+    };
+  </script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+
+
+
+
+
+
+
+
+
+  
+    <script type="text/javascript" src="/js/load-photoswipe.js"></script>
+    <script type="text/javascript" src="/lib/photoswipe/photoswipe.min.js"></script>
+    <script type="text/javascript" src="/lib/photoswipe/photoswipe-ui-default.min.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

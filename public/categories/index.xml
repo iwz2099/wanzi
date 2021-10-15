@@ -6,15 +6,42 @@
     <description>Recent content in Categories on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 11 Sep 2021 17:22:42 +0800</lastBuildDate>
     
 	<atom:link href="https://wnote.com/categories/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>kubernetes</title>
+      <link>https://wnote.com/categories/kubernetes/</link>
+      <pubDate>Sat, 11 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/kubernetes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>storage</title>
+      <link>https://wnote.com/categories/storage/</link>
+      <pubDate>Wed, 08 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/storage/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>linux</title>
+      <link>https://wnote.com/categories/linux/</link>
+      <pubDate>Sat, 10 Jul 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/categories/linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>cicd</title>
       <link>https://wnote.com/categories/cicd/</link>
-      <pubDate>Fri, 07 May 2021 16:22:42 +0800</pubDate>
+      <pubDate>Wed, 07 Jul 2021 16:22:42 +0800</pubDate>
       
       <guid>https://wnote.com/categories/cicd/</guid>
       <description></description>
@@ -35,24 +62,6 @@
       <pubDate>Tue, 10 Mar 2020 16:22:42 +0800</pubDate>
       
       <guid>https://wnote.com/categories/tools/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>kubernetes</title>
-      <link>https://wnote.com/categories/kubernetes/</link>
-      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/categories/kubernetes/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>linux</title>
-      <link>https://wnote.com/categories/linux/</link>
-      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/categories/linux/</guid>
       <description></description>
     </item>
     

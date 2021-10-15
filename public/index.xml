@@ -19,7 +19,7 @@
       <guid>https://wnote.com/about/</guid>
       
         <description>&lt;h2 id=&#34;关于我&#34;&gt;关于我&lt;/h2&gt;
-&lt;p&gt;我的网名&amp;quot;丸子说&amp;rdquo;, 目前在一家人工智能公司担任DevOps，业余时间喜欢看看书、写写博客, 喜欢以博会友。&lt;/p&gt;
+&lt;p&gt;我的网名&amp;quot;丸子说&amp;rdquo;, 目前在一家人工智能公司负责运维架构相关工作，业余时间喜欢看看书、写写博客, 喜欢以博会友。&lt;/p&gt;
 &lt;h2 id=&#34;关于本站&#34;&gt;关于本站&lt;/h2&gt;
 &lt;p&gt;这个站点的域名是 &lt;code&gt;wnote.com&lt;/code&gt; ，w寓意“丸子”，因此wnote可以理解为丸子有记，有忆可记.&lt;/p&gt;
 &lt;h2 id=&#34;丸子日常&#34;&gt;丸子日常&lt;/h2&gt;
@@ -29,6 +29,1753 @@
 &lt;li&gt;&lt;strong&gt;编程语言&lt;/strong&gt; —— 熟悉程度由高到低 &lt;code&gt;shell&lt;/code&gt;, &lt;code&gt;Python&lt;/code&gt;, &lt;code&gt;Golang&lt;/code&gt;, &lt;code&gt;Html/Css/Js&lt;/code&gt; 。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;键盘&lt;/strong&gt; —— Cherry G80 红轴&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h2 id=&#34;本站建站目的&#34;&gt;本站建站目的&lt;/h2&gt;
+&lt;p&gt;一、技术总结。随着时间的推移，有些技术很快就忘了，建立独立站点写博客，不仅仅方便自己日后查找、驱动自己写总结，而且让自己更认真对待这件事。&lt;/p&gt;
+&lt;p&gt;二、分享经验和思路。毕业后就来了北京，一路走来，中间也经历了不少挫折，但是通过自我学习成长过程，很快融入了互联网的浪潮中，因此，分享些有价值的东西对行业和社会也是一种回馈。&lt;/p&gt;
+&lt;p&gt;三、交友。在这个快速发展的年代，我觉得以博会友也是一件有意思的事儿。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>制定kubernetes集群备份策略</title>
+      <link>https://wnote.com/post/kubernetes-velero-etcd-backup/</link>
+      <pubDate>Sat, 11 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-velero-etcd-backup/</guid>
+      
+        <description>&lt;p&gt;对于备份，每家互联网公司技术人员都要去做的一件事儿，当然我们也不例外，今天我主要针对生产环境kubernetes集群制定一些自己的策略，这里分享给大家。&lt;/p&gt;
+&lt;p&gt;我这里kubernetes备份目的主要为了防止如下情况出现：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;防止误操作删除集群中某一个namespace&lt;/li&gt;
+&lt;li&gt;防止误操作导致集群中某一个资源出现异常，比如deployment、configmap等&lt;/li&gt;
+&lt;li&gt;防止误操作删除集群部分资源对象&lt;/li&gt;
+&lt;li&gt;防止etcd数据丢失&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;备份etcd&#34;&gt;备份ETCD&lt;/h2&gt;
+&lt;p&gt;备份etcd，防止k8s集群出现了集群级别故障或etcd数据丢失情况，导致整个集群不可用的情况，这种情况只能通过恢复集群恢复业务。&lt;/p&gt;
+&lt;p&gt;备份etcd脚本如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+#ENDPOINTS=&amp;quot;https://192.168.1.207:2379,https://192.168.1.208:2379,https://192.168.1.209:2379&amp;quot;
+ENDPOINTS=&amp;quot;127.0.0.1:2379&amp;quot;
+CACERT=&amp;quot;/etc/kubernetes/pki/etcd/ca.crt&amp;quot;
+CERT=&amp;quot;/etc/kubernetes/pki/etcd/server.crt&amp;quot;
+KEY=&amp;quot;/etc/kubernetes/pki/etcd/server.key&amp;quot;
+DATE=`date +%Y%m%d-%H%M%S`
+BACKUP_DIR=&amp;quot;/home/centos/hostpath/backups/k8s/etcd&amp;quot;
+ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=${CACERT} --cert=${CERT} --key=${KEY}  --endpoints=&amp;quot;${ENDPOINTS}&amp;quot; snapshot save ${BACKUP_DIR}/k8s-snapshot-${DATE}.db
+find  $BACKUP_DIR/ -type f -mtime +20 -exec rm -f {} \;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;cron任务计划：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;50 21 * * * /bin/bash /home/centos/hostpath/backups/k8s/etcdv3-bak.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;minio对象存储服务搭建&#34;&gt;minio对象存储服务搭建&lt;/h2&gt;
+&lt;p&gt;由于我们的存储集群采用的GlusterFS搭建，因此，这里我只能使用minio搭建对象存储，底层采用GlusterFS文件系统；如果你使用阿里云OSS备份你集群资源，请忽略这一步，可以移驾：https://github.com/AliyunContainerService/velero-plugin&lt;/p&gt;
+&lt;p&gt;由于minio在k8s环境下搭建需要提供对应存储pv/pvc，这里为了简单，直接启动docker方式：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;version: &#39;2.0&#39;
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - &amp;quot;39000:9000&amp;quot;
+      - &amp;quot;39001:9001&amp;quot;
+    restart: always
+    command: server --console-address &#39;:9001&#39; /data
+    environment:
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: adminSD#123
+    logging:
+      options:
+        max-size: &amp;quot;1000M&amp;quot; # 最大文件上传限制
+        max-file: &amp;quot;100&amp;quot;
+      driver: json-file
+    volumes:
+      - /home/centos/hostpath/backups/k8s/velero:/data # 映射文件路径
+    networks:
+      - minio
+
+networks:
+  minio:
+    ipam:
+      config:
+      - subnet: 10.210.1.0/24
+        gateway: 10.210.1.1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;打开浏览器输入如下地址和账户信息，就可以通过web控制台管理minio对象存储了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;minio web：http://192.168.1.214:39001
+minio admin：admin
+minio admin passwd：adminSD#123
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;velero备份之安装客户端&#34;&gt;velero备份之安装客户端&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;brew install velero
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建文件credentials-velero内容如下,方便后边创建velero server端连接对象存储使用：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[default]
+aws_access_key_id = admin
+aws_secret_access_key = adminSD#123
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;velero备份之k8s部署velero&#34;&gt;velero备份之k8s部署velero&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;# velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&amp;quot;true&amp;quot;,s3Url=http://192.168.1.214:39000
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;velero备份之velero命令&#34;&gt;velero备份之velero命令&lt;/h2&gt;
+&lt;h3 id=&#34;备份查看删除操作&#34;&gt;备份,查看,删除操作&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;#备份集群ingress-nginx namespace下资源:
+velero backup create ingress-nginx-backup --include-namespaces ingress-nginx
+
+#查看备份结果
+velero backup describe ingress-nginx-backup
+velero backup logs ingress-nginx-backup
+
+#删除备份
+velero delete backup ingress-nginx-backup
+
+#备份非ingress-nginx和test命名空间下的资源：
+velero backup create k8s-full-test-backup --exclude-namespaces ingress-nginx,test
+
+#备份特定资源类型
+velero backup create kube-system-backup --include-resources pod,secret
+
+#--confirm 直接删除备份，无需确认：
+velero backup delete kube-system-backup --confirm
+
+#备份带pv pod
+velero backup create pvc-backup  --snapshot-volumes --include-namespaces test-velero
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&amp;ndash;include-resources备份指定资源类型, &amp;ndash;exclude-resources指定排除某些资源类型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;定时备份&#34;&gt;定时备份：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# 每六个小时备份一次
+velero create schedule ${SCHEDULE_NAME} --schedule=&amp;quot;0 */6 * * *&amp;quot;
+
+# 每六个小时使用every备份一次
+velero create schedule ${SCHEDULE_NAME} --schedule=&amp;quot;@every 6h&amp;quot;
+
+# 创建一个web命名空间的天备份
+velero create schedule ${SCHEDULE_NAME} --schedule=&amp;quot;@every 24h&amp;quot; --include-namespaces web
+
+# 创建一个周备份，持续时间为90天。
+velero create schedule ${SCHEDULE_NAME} --schedule=&amp;quot;@every 168h&amp;quot; --ttl 2160h0m0s
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;说明：&amp;ndash;ttl可以指定backup的生存周期，在ttl超时后，backup会被定期清理,ttl默认30天&lt;/p&gt;
+&lt;h3 id=&#34;备份恢复&#34;&gt;备份恢复：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;#从backup创建restore
+velero restore create ${RESTORE_NAME} --from-backup ${BACKUP_NAME}
+
+# 从backup创建restore，restore默认名为 ${BACKUP_NAME}-&amp;lt;timestamp&amp;gt;
+velero restore create --from-backup ${BACKUP_NAME}
+
+# 从schedule最新一次的backup创建restore
+velero restore create --from-schedule ${SCHEDULE_NAME}
+
+# 指定backup中的某些资源创建restore
+velero restore create --from-backup backup-2 --include-resources pod,secret
+
+# 恢复集群所有备份，（对已经存在的服务不会覆盖）
+velero restore create --from-backup all-ns-backup
+
+# 仅恢复default nginx-example命名空间
+velero restore create --from-backup all-ns-backup --include-namespaces default,nginx-example 
+
+# 将test-velero 命名空间资源恢复到test-velero-1下面
+velero restore create restore-for-test --from-backup everyday-1-20210203131802 --namespace-mappings test-velero:test-velero-1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;查看备份&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;velero  get  backup   #备份查看
+velero  get  schedule #查看定时备份
+velero  get  restore  #查看已有的恢复
+velero  get  plugins  #查看插件
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;说明：&lt;/p&gt;
+&lt;p&gt;velero restore create RESTORE_NAME &amp;ndash;from-backup BACKUP_NAME &amp;ndash;namespace-mappings old-ns-1:new-ns-1,old-ns-2:new-ns-2&lt;/p&gt;
+&lt;p&gt;Velero可以将资源还原到与其备份来源不同的命名空间中。为此，请使用&amp;ndash;namespace-mappings标志&lt;/p&gt;
+&lt;h2 id=&#34;velero备份实战&#34;&gt;velero备份实战&lt;/h2&gt;
+&lt;h3 id=&#34;velero对集群进行一次完整备份&#34;&gt;velero对集群进行一次完整备份：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;velero backup create  k8s-jf-test-all
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置4小时定时备份一次备份保留2个月&#34;&gt;设置4小时定时备份一次，备份保留2个月：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# velero create schedule k8s-jf-cron-4h --exclude-namespaces test,tt --schedule=&amp;quot;@every 4h&amp;quot; --ttl 1440h
+Schedule &amp;quot;k8s-jf-cron-4h&amp;quot; created successfully.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;同集群下手动从完整备份中恢复其中一个namespace到指定namespace&#34;&gt;同集群下，手动从完整备份中恢复其中一个namespace到指定namespace&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# velero restore create  k8s-jf-test-all-restore --from-backup  k8s-jf-test-all --include-namespaces test --namespace-mappings  test:test10000
+# velero restore describe k8s-jf-test-all-restore #查看恢复状态
+Name:         k8s-jf-test-all-restore
+Namespace:    velero
+Labels:       &amp;lt;none&amp;gt;
+Annotations:  &amp;lt;none&amp;gt;
+Phase:                                 InProgress
+Estimated total items to be restored:  141
+Items restored so far:                 123
+Started:    2021-09-07 10:47:44 +0800 CST
+Completed:  &amp;lt;n/a&amp;gt;
+Backup:  k8s-jf-test-all
+Namespaces:
+  Included:  all namespaces found in the backup
+  Excluded:  &amp;lt;none&amp;gt;
+Resources:
+  Included:        *
+  Excluded:        nodes, events, events.events.k8s.io, backups.velero.io, restores.velero.io, resticrepositories.velero.io
+  Cluster-scoped:  auto
+Namespace mappings:  test=test10000
+Label selector:  &amp;lt;none&amp;gt;
+Restore PVs:  auto
+Preserve Service NodePorts:  auto
+# velero restore get
+NAME                      BACKUP            STATUS       STARTED                         COMPLETED   ERRORS   WARNINGS   CREATED                         SELECTOR
+k8s-jf-test-all-restore   k8s-jf-test-all   InProgress   2021-09-07 10:47:44 +0800 CST   &amp;lt;nil&amp;gt;       0        0          2021-09-07 10:47:44 +0800 CST   &amp;lt;none&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;跨集群将定期备份数据恢复&#34;&gt;跨集群，将定期备份数据恢复&lt;/h3&gt;
+&lt;p&gt;对于velero，跨集群需要保持2个集群使用的是同一个云厂商持久卷方案，这里我们统一使用minio，bucket都使用k8s-jf&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&amp;quot;true&amp;quot;,s3Url=http://192.168.1.214:39000
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;查看已经备份数据&#34;&gt;查看已经备份数据：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;#velero backup get
+NAME                                STATUS            ERRORS   WARNINGS   CREATED                         EXPIRES   STORAGE LOCATION   SELECTOR
+k8s-jf-all-cron-4h-20210907061716   Completed         0        0          2021-09-07 14:17:16 +0800 CST   59d       default            &amp;lt;none&amp;gt;
+k8s-jf-all-cron-4h-20210907021627   Completed         0        0          2021-09-07 10:16:27 +0800 CST   59d       default            &amp;lt;none&amp;gt;
+k8s-jf-test-all                     Completed         0        0          2021-09-07 10:19:45 +0800 CST   29d       default            &amp;lt;none&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;恢复指定命名空间数据&#34;&gt;恢复指定命名空间数据&lt;/h3&gt;
+&lt;p&gt;这里从k8s-jf-all-cron-4h-20210907061716这个备份恢复argocd命名空间数据到本集群argocd-dev下&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# velero restore create  --from-backup  k8s-jf-all-cron-4h-20210907061716 --include-namespaces argocd --namespace-mappings  argocd:argocd-dev
+Restore request &amp;quot;k8s-jf-all-cron-4h-20210907061716-20210907155450&amp;quot; submitted successfully.
+Run `velero restore describe k8s-jf-all-cron-4h-20210907061716-20210907155450` or `velero restore logs k8s-jf-all-cron-4h-20210907061716-20210907155450` for more details.
+# velero restore get
+NAME                                               BACKUP                              STATUS       STARTED                         COMPLETED   ERRORS   WARNINGS   CREATED                         SELECTOR
+k8s-jf-all-cron-4h-20210907061716-20210907155450   k8s-jf-all-cron-4h-20210907061716   InProgress   2021-09-07 15:54:51 +0800 CST   &amp;lt;nil&amp;gt;       0        0          2021-09-07 15:54:51 +0800 CST   &amp;lt;none&amp;gt;
+# velero restore logs k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: argocd-application-controller-token-wv62v&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Restored 2 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=argocd-application-controller-token-wv62v namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: argocd-dex-server-token-9n4rs&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Restored 3 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=argocd-dex-server-token-9n4rs namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: argocd-secret&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Restored 4 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=argocd-secret namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: argocd-server-token-48vjd&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Restored 5 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=argocd-server-token-48vjd namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: cluster-192.168.1.210-3497337724&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Restored 6 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=cluster-192.168.1.210-3497337724 namespace=argocd-dev progress= resource=secrets restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:23Z&amp;quot; level=info msg=&amp;quot;Attempting to restore Secret: cluster-192.168.1.214-1096681010&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:1238&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+...
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;Restored 61 items out of an estimated total of 61 (estimate will change throughout the restore)&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:664&amp;quot; name=argocd-server namespace=argocd-dev progress= resource=services restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;Waiting for all restic restores to complete&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:546&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;Done waiting for all restic restores to complete&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:562&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;Waiting for all post-restore-exec hooks to complete&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:566&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;Done waiting for all post-restore exec hooks to complete&amp;quot; logSource=&amp;quot;pkg/restore/restore.go:574&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+time=&amp;quot;2021-09-07T08:11:30Z&amp;quot; level=info msg=&amp;quot;restore completed&amp;quot; logSource=&amp;quot;pkg/controller/restore_controller.go:480&amp;quot; restore=velero/k8s-jf-all-cron-4h-20210907061716-20210907161119
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过日志可以看到原集群argo下数据已经恢复到现在集群argo-dev下&lt;/p&gt;
+&lt;h3 id=&#34;卸载velero&#34;&gt;卸载velero&lt;/h3&gt;
+&lt;p&gt;卸载velero，注意这里的uninstall不会删除namespace：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# velero uninstall
+You are about to uninstall Velero.
+Are you sure you want to continue (Y/N)? y
+Velero uninstalled ⛵
+# kubectl delete namespace/velero clusterrolebinding/velero
+# kubectl delete crds -l component=velero
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;备份中遇到异常&#34;&gt;备份中遇到异常&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;time=&amp;quot;2021-09-07T07:22:35Z&amp;quot; level=info msg=&amp;quot;Validating backup storage location&amp;quot; backup-storage-location=default controller=backup-storage-location logSource=&amp;quot;pkg/controller/backup_storage_location_controller.go:114&amp;quot;
+time=&amp;quot;2021-09-07T07:22:36Z&amp;quot; level=info msg=&amp;quot;Backup storage location is invalid, marking as unavailable&amp;quot; backup-storage-location=default controller=backup-storage-location logSource=&amp;quot;pkg/controller/backup_storage_location_controller.go:117&amp;quot;
+time=&amp;quot;2021-09-07T07:22:36Z&amp;quot; level=error msg=&amp;quot;Error listing backups in backup store&amp;quot; backupLocation=default controller=backup-sync error=&amp;quot;rpc error: code = Unknown desc = RequestError: send request failed\ncaused by: Get http://minio.velero.svc:9000/velero?delimiter=%2F&amp;amp;list-type=2&amp;amp;prefix=backups%2F: dial tcp: lookup minio.velero.svc on 10.96.0.10:53: no such host&amp;quot; error.file=&amp;quot;/go/src/velero-plugin-for-aws/velero-plugin-for-aws/object_store.go:361&amp;quot; error.function=&amp;quot;main.(*ObjectStore).ListCommonPrefixes&amp;quot; logSource=&amp;quot;pkg/controller/backup_sync_controller.go:182&amp;quot;
+time=&amp;quot;2021-09-07T07:22:36Z&amp;quot; level=error msg=&amp;quot;Current backup storage locations available/unavailable/unknown: 0/1/0, Backup storage location \&amp;quot;default\&amp;quot; is unavailable: rpc error: code = Unknown desc = RequestError: send request failed\ncaused by: Get http://minio.velero.svc:9000/velero?delimiter=%2F&amp;amp;list-type=2&amp;amp;prefix=: dial tcp: lookup minio.velero.svc on 10.96.0.10:53: no such host)&amp;quot; controller=backup-storage-location logSource=&amp;quot;pkg/controller/backup_storage_location_controller.go:164&amp;quot;
+time=&amp;quot;2021-09-07T07:22:36Z&amp;quot; level=error msg=&amp;quot;Current backup storage locations available/unavailable/unknown: 0/1/0)&amp;quot; controller=backup-storage-location logSource=&amp;quot;pkg/controller/backup_storage_location_controller.go:166&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;说明CRD资源BackupStorageLocation信息以及对象存储账户和自己设置的不一致，由于重新安装没有清理干净旧的资源信息&lt;/p&gt;
+&lt;p&gt;这里重新安装即可：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# velero uninstall
+You are about to uninstall Velero.
+Are you sure you want to continue (Y/N)? y
+Velero uninstalled ⛵
+# kubectl delete namespace/velero clusterrolebinding/velero
+# kubectl delete crds -l component=velero
+# velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.2.0 \
+    --bucket k8s-jf \
+    --secret-file ./credentials-velero \
+    --use-volume-snapshots=false \
+    --backup-location-config region=minio,s3ForcePathStyle=&amp;quot;true&amp;quot;,s3Url=http://192.168.1.214:39000
+# kubectl -n velero get backupstoragelocation default -o yaml #查看资源信息已经是自己想要的
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  creationTimestamp: &amp;quot;2021-09-07T07:47:44Z&amp;quot;
+  generation: 1
+  labels:
+    component: velero
+  name: default
+  namespace: velero
+  resourceVersion: &amp;quot;1184696&amp;quot;
+  selfLink: /apis/velero.io/v1/namespaces/velero/backupstoragelocations/default
+  uid: 39502e43-272e-461f-a114-a9ec955f0510
+spec:
+  config:
+    region: minio
+    s3ForcePathStyle: &amp;quot;true&amp;quot;
+    s3Url: http://192.168.1.214:39000
+  default: true
+  objectStorage:
+    bucket: k8s-jf
+  provider: aws
+status:
+  lastSyncedTime: &amp;quot;2021-09-07T07:50:00Z&amp;quot;
+  lastValidationTime: &amp;quot;2021-09-07T07:50:00Z&amp;quot;
+  phase: Available            
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>如何快速搭建一套Greenplum集群</title>
+      <link>https://wnote.com/post/greenplum-docker-compose-installtion/</link>
+      <pubDate>Wed, 08 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/greenplum-docker-compose-installtion/</guid>
+      
+        <description>&lt;p&gt;最近内部项目支持大数据项目，需要模拟客户场景配置Greenplum(老版本4.2.2.4)，因此这里记录下greenplum集群搭建过程,其实对于高版本的GP搭建过程一样。&lt;/p&gt;
+&lt;h2 id=&#34;构建基础镜像&#34;&gt;构建基础镜像&lt;/h2&gt;
+&lt;p&gt;centos6环境Dockerfile：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM centos:6
+
+RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+RUN curl -o /etc/yum.repos.d/CentOS-Base.repo https://www.xmpan.com/Centos-6-Vault-Aliyun.repo
+RUN yum -y update; yum clean all
+RUN yum install -y \
+    net-tools \
+    ntp \
+    openssh-server \
+    openssh-clients \
+    less \
+    iproute \
+    lsof \
+    wget \
+    ed \
+    which; yum clean all
+RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N &#39;&#39;
+RUN groupadd gpadmin
+RUN useradd gpadmin -g gpadmin
+RUN echo gpadmin | passwd gpadmin --stdin
+ENTRYPOINT [&amp;quot;/usr/sbin/sshd&amp;quot;, &amp;quot;-D&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;构建镜像：
+docker build -t harbor.test.com/sp/greenplum-base:centos6 .&lt;/p&gt;
+&lt;p&gt;centos7环境Dockerfile：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;FROM centos:7
+
+RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+RUN curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+RUN yum -y update; yum clean all
+RUN yum install -y \
+    net-tools \
+    ntp \
+    openssh-server \
+    openssh-clients \
+    less \
+    iproute \
+    lsof \
+    wget \
+    ed \
+    which; yum clean all
+RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N &#39;&#39;
+RUN groupadd gpadmin
+RUN useradd gpadmin -g gpadmin
+RUN echo gpadmin | passwd gpadmin --stdin
+ENTRYPOINT [&amp;quot;/usr/sbin/sshd&amp;quot;, &amp;quot;-D&amp;quot;]
+
+docker build -t harbor.test.com/sp/greenplum-base:centos7 .
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;docker-compose管理gp&#34;&gt;Docker-compose管理GP&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;version: &amp;quot;2&amp;quot;
+
+services:
+  mdw:
+    #image: &amp;quot;harbor.test.com/sp/greenplum-base:centos7&amp;quot;
+    image: &amp;quot;harbor.test.com/sp/greenplum-base:centos6&amp;quot;
+    container_name: gpdb-mdw
+    volumes:
+    - greenplum-mdw:/home/gpadmin
+    ports:
+      - &amp;quot;2222:22&amp;quot;
+      - &amp;quot;15432:5432&amp;quot;
+    hostname: mdw
+    tty: true
+    networks:
+      - greenplum
+
+  sdw1:
+    #image: &amp;quot;harbor.test.com/sp/greenplum-base:centos7&amp;quot;
+    image: &amp;quot;harbor.test.com/sp/greenplum-base:centos6&amp;quot;
+    container_name: gpdb-sdw1
+    volumes:
+    - greenplum-mdw:/home/gpadmin
+    hostname: sdw1
+    tty: true
+    networks:
+      - greenplum
+
+  sdw2:
+    #image: &amp;quot;harbor.test.com/sp/greenplum-base:centos7&amp;quot;
+    image: &amp;quot;harbor.test.com/sp/greenplum-base:centos6&amp;quot;
+    container_name: gpdb-sdw2
+    volumes:
+    - greenplum-mdw:/home/gpadmin
+    hostname: sdw2
+    tty: true
+    networks:
+      - greenplum
+
+networks:
+  greenplum:
+    ipam:
+      config:
+      - subnet: 10.188.0.0/24
+        gateway: 10.188.0.1
+
+volumes:
+ greenplum-mdw:
+ greenplum-sdw1:
+ greenplum-sdw2:
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;启动服务&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;docker-compose up -d 
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;初始化安装greenplum&#34;&gt;初始化安装greenplum&lt;/h2&gt;
+&lt;h3 id=&#34;将greenplum二进制copy到容器中进行安装&#34;&gt;将greenplum二进制copy到容器中进行安装&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;docker cp greenplum-db-4.2.2.4-build-1-CE-RHEL5-x86_64.bin gpdb-mdw:/home/gpadmin
+docker exec -it gpdb-mdw /bin/bash
+su - gpadmin
+bash greenplum-db-4.2.2.4-build-1-CE-RHEL5-x86_64.bin
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我这里安装目录为：/home/gpadmin/greenplum-db-new&lt;/p&gt;
+&lt;h3 id=&#34;初始化配置文件&#34;&gt;初始化配置文件：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# cd /home/gpadmin/gpconfig/
+# touch hostlist seglist
+# cat hostlist
+mdw
+sdw1
+sdw2
+# cat seglist 
+sdw1
+sdw2
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;加载环境变量并配置ssh密钥信息&#34;&gt;加载环境变量并配置ssh密钥信息&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;source ~/greenplum-db/greenplum_path.sh
+gpssh-exkeys -f /home/gpadmin/gpconfig/hostlist
+gpseginstall -f /home/gpadmin/gpconfig/seglist
+gpssh -f ~/gpconfig/hostlist -e ls -l $GPHOME
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;分别在mdwsdw1sdw2主机下创建数据目录&#34;&gt;分别在mdw、sdw1、sdw2主机下创建数据目录&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;mkdir -p ~/data/master
+gpssh -f ~/gpconfig/seglist -e &amp;quot;mkdir -p ~/data/primary&amp;quot;
+gpssh -f ~/gpconfig/seglist -e &amp;quot;mkdir -p ~/data/mirror&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;修改初始化安装配置&#34;&gt;修改初始化安装配置：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;$ cp /home/gpadmin/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_config ~/gpconfig/gpinitsystem_config
+$ egrep -v &#39;^$|^#&#39; gpinitsystem_config
+ARRAY_NAME=&amp;quot;EMC Greenplum DW&amp;quot;
+SEG_PREFIX=gpseg
+PORT_BASE=40000
+MACHINE_LIST_FILE=/home/gpadmin/gpconfig/hostlist
+declare -a DATA_DIRECTORY=(/home/gpadmin/data/primary)
+MASTER_HOSTNAME=mdw
+MASTER_DIRECTORY=/home/gpadmin/data/master
+MASTER_PORT=5432
+TRUSTED_SHELL=ssh
+CHECK_POINT_SEGMENTS=8
+ENCODING=UNICODE
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;初始化安装greenplum服务器&#34;&gt;初始化安装greenplum服务器&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;[gpadmin@mdw ~]$ gpinitsystem -c gpconfig/gpinitsystem_config -h gpconfig/seglist
+20210723:08:04:39:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checking configuration parameters, please wait...
+/bin/mv: try to overwrite `gpconfig/gpinitsystem_config&#39;, overriding mode 0664 (rw-rw-r--)?
+20210723:08:04:51:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Reading Greenplum configuration file gpconfig/gpinitsystem_config
+20210723:08:04:51:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Locale has not been set in gpconfig/gpinitsystem_config, will set to default value
+20210723:08:04:51:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Locale set to en_US.utf8
+20210723:08:04:51:000282 gpinitsystem:mdw:gpadmin-[INFO]:-No DATABASE_NAME set, will exit following template1 updates
+20210723:08:04:51:000282 gpinitsystem:mdw:gpadmin-[INFO]:-MASTER_MAX_CONNECT not set, will set to default value 250
+20210723:08:04:52:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checking configuration parameters, Completed
+20210723:08:04:52:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Commencing multi-home checks, please wait...
+..
+20210723:08:04:52:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Configuring build for standard array
+20210723:08:04:52:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Commencing multi-home checks, Completed
+20210723:08:04:53:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Building primary segment instance array, please wait...
+..
+20210723:08:04:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checking Master host
+20210723:08:04:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checking new segment hosts, please wait...
+..
+20210723:08:04:57:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checking new segment hosts, Completed
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Greenplum Database Creation Parameters
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:---------------------------------------
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master Configuration
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:---------------------------------------
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master instance name       = EMC Greenplum DW
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master hostname            = mdw
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master port                = 5432
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master instance dir        = /home/gpadmin/data/master/gpseg-1
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master LOCALE              = en_US.utf8
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Greenplum segment prefix   = gpseg
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master Database            =
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master connections         = 250
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master buffers             = 128000kB
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Segment connections        = 750
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Segment buffers            = 128000kB
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Checkpoint segments        = 8
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Encoding                   = UNICODE
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Postgres param file        = Off
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Initdb to be used          = /home/gpadmin/greenplum-db/./bin/initdb
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-GP_LIBRARY_PATH is         = /home/gpadmin/greenplum-db/./lib
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Ulimit check               = Passed
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Array host connect type    = Single hostname per node
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Master IP address [1]      = 10.188.0.2
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Standby Master             = Not Configured
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Primary segment #          = 1
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Total Database segments    = 2
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Trusted shell              = ssh
+20210723:08:04:58:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Number segment hosts       = 2
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Mirroring config           = OFF
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:----------------------------------------
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Greenplum Primary Segment Configuration
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:----------------------------------------
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:-sdw1 	/home/gpadmin/data/primary/gpseg0 	40000 	2 	0
+20210723:08:04:59:000282 gpinitsystem:mdw:gpadmin-[INFO]:-sdw2 	/home/gpadmin/data/primary/gpseg1 	40000 	3 	1
+Continue with Greenplum creation Yy/Nn&amp;gt;
+Y
+20210723:08:05:02:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Building the Master instance database, please wait...
+20210723:08:05:13:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Starting the Master in admin mode
+20210723:08:05:37:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Commencing parallel build of primary segment instances
+20210723:08:05:37:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Spawning parallel processes    batch [1], please wait...
+..
+20210723:08:05:37:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Waiting for parallel processes batch [1], please wait...
+.................
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:------------------------------------------------
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Parallel process exit status
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:------------------------------------------------
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Total processes marked as completed           = 2
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Total processes marked as killed              = 0
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Total processes marked as failed              = 0
+20210723:08:05:54:000282 gpinitsystem:mdw:gpadmin-[INFO]:------------------------------------------------
+20210723:08:05:55:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Deleting distributed backout files
+20210723:08:05:55:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Removing back out file
+20210723:08:05:55:000282 gpinitsystem:mdw:gpadmin-[INFO]:-No errors generated from parallel processes
+20210723:08:05:55:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Restarting the Greenplum instance in production mode
+20210723:08:05:55:010330 gpstop:mdw:gpadmin-[INFO]:-Starting gpstop with args: -a -i -m -d /home/gpadmin/data/master/gpseg-1
+20210723:08:05:55:010330 gpstop:mdw:gpadmin-[INFO]:-Gathering information and validating the environment...
+20210723:08:05:56:010330 gpstop:mdw:gpadmin-[INFO]:-Obtaining Greenplum Master catalog information
+20210723:08:05:56:010330 gpstop:mdw:gpadmin-[INFO]:-Obtaining Segment details from master...
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-Greenplum Version: &#39;postgres (Greenplum Database) 4.2.2.4 build 1 Community Edition&#39;
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-There are 0 connections to the database
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-Commencing Master instance shutdown with mode=&#39;immediate&#39;
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-Master host=mdw
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-Commencing Master instance shutdown with mode=immediate
+20210723:08:05:57:010330 gpstop:mdw:gpadmin-[INFO]:-Master segment instance directory=/home/gpadmin/data/master/gpseg-1
+20210723:08:05:58:010413 gpstart:mdw:gpadmin-[INFO]:-Starting gpstart with args: -a -d /home/gpadmin/data/master/gpseg-1
+20210723:08:05:58:010413 gpstart:mdw:gpadmin-[INFO]:-Gathering information and validating the environment...
+20210723:08:05:59:010413 gpstart:mdw:gpadmin-[INFO]:-Greenplum Binary Version: &#39;postgres (Greenplum Database) 4.2.2.4 build 1 Community Edition&#39;
+20210723:08:06:00:010413 gpstart:mdw:gpadmin-[INFO]:-Greenplum Catalog Version: &#39;201109210&#39;
+20210723:08:06:01:010413 gpstart:mdw:gpadmin-[INFO]:-Starting Master instance in admin mode
+20210723:08:06:02:010413 gpstart:mdw:gpadmin-[INFO]:-Obtaining Greenplum Master catalog information
+20210723:08:06:02:010413 gpstart:mdw:gpadmin-[INFO]:-Obtaining Segment details from master...
+20210723:08:06:03:010413 gpstart:mdw:gpadmin-[INFO]:-Setting new master era
+20210723:08:06:03:010413 gpstart:mdw:gpadmin-[INFO]:-Master Started...
+20210723:08:06:03:010413 gpstart:mdw:gpadmin-[INFO]:-Checking for filespace consistency
+20210723:08:06:03:010413 gpstart:mdw:gpadmin-[INFO]:-Obtaining current filespace entries used by TRANSACTION_FILES
+20210723:08:06:03:010413 gpstart:mdw:gpadmin-[INFO]:-TRANSACTION_FILES OIDs are consistent for pg_system filespace
+20210723:08:06:04:010413 gpstart:mdw:gpadmin-[INFO]:-TRANSACTION_FILES entries are consistent for pg_system filespace
+20210723:08:06:04:010413 gpstart:mdw:gpadmin-[INFO]:-Checking for filespace consistency
+20210723:08:06:04:010413 gpstart:mdw:gpadmin-[INFO]:-Obtaining current filespace entries used by TEMPORARY_FILES
+20210723:08:06:05:010413 gpstart:mdw:gpadmin-[INFO]:-TEMPORARY_FILES OIDs are consistent for pg_system filespace
+20210723:08:06:06:010413 gpstart:mdw:gpadmin-[INFO]:-TEMPORARY_FILES entries are consistent for pg_system filespace
+20210723:08:06:06:010413 gpstart:mdw:gpadmin-[INFO]:-Shutting down master
+20210723:08:06:10:010413 gpstart:mdw:gpadmin-[INFO]:-No standby master configured.  skipping...
+20210723:08:06:10:010413 gpstart:mdw:gpadmin-[INFO]:-Commencing parallel segment instance startup, please wait...
+....
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-Process results...
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-----------------------------------------------------
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-   Successful segment starts                                            = 2
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-   Failed segment starts                                                = 0
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-   Skipped segment starts (segments are marked down in configuration)   = 0
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-----------------------------------------------------
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-Successfully started 2 of 2 segment instances
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-----------------------------------------------------
+20210723:08:06:14:010413 gpstart:mdw:gpadmin-[INFO]:-Starting Master instance mdw directory /home/gpadmin/data/master/gpseg-1
+20210723:08:06:16:010413 gpstart:mdw:gpadmin-[INFO]:-Command pg_ctl reports Master mdw instance active
+20210723:08:06:17:010413 gpstart:mdw:gpadmin-[INFO]:-Database successfully started
+20210723:08:06:17:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Completed restart of Greenplum instance in production mode
+20210723:08:06:17:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Loading gp_toolkit...
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Scanning utility log file for any warning messages
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[WARN]:-*******************************************************
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[WARN]:-Scan of log file indicates that some warnings or errors
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[WARN]:-were generated during the array creation
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Please review contents of log file
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-/home/gpadmin/gpAdminLogs/gpinitsystem_20210723.log
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-To determine level of criticality
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[WARN]:-*******************************************************
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Greenplum Database instance successfully created
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-------------------------------------------------------
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-To complete the environment configuration, please
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-update gpadmin .bashrc file with the following
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-1. Ensure that the greenplum_path.sh file is sourced
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-2. Add &amp;quot;export MASTER_DATA_DIRECTORY=/home/gpadmin/data/master/gpseg-1&amp;quot;
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-   to access the Greenplum scripts for this instance:
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-   or, use -d /home/gpadmin/data/master/gpseg-1 option for the Greenplum scripts
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-   Example gpstate -d /home/gpadmin/data/master/gpseg-1
+20210723:08:06:18:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Script log file = /home/gpadmin/gpAdminLogs/gpinitsystem_20210723.log
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-To remove instance, run gpdeletesystem utility
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-To initialize a Standby Master Segment for this Greenplum instance
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Review options for gpinitstandby
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-------------------------------------------------------
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-The Master /home/gpadmin/data/master/gpseg-1/pg_hba.conf post gpinitsystem
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-has been configured to allow all hosts within this new
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-array to intercommunicate. Any hosts external to this
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-new array must be explicitly added to this file
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-Refer to the Greenplum Admin support guide which is
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-located in the /home/gpadmin/greenplum-db/./docs directory
+20210723:08:06:19:000282 gpinitsystem:mdw:gpadmin-[INFO]:-------------------------------------------------------
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;greenplum账户相关&#34;&gt;Greenplum账户相关&lt;/h2&gt;
+&lt;p&gt;创建用户admini，并设置能够创建数据库、登陆权限：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;create role admini password &#39;SdAdm2021#&#39; createdb login;
+select rolname,oid from pg_roles;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于密码忘记了，也可以修改密码信息来管理：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;alter user gpadmin with password &#39;SdAdm2021#&#39;;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改/home/gpadmin/data/master/gpseg-1/pg_hba.conf授权admini可以远程登陆：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;host     all         admini         127.0.0.1/32       md5
+host     all         admini         10.188.0.2/32       md5
+host     all         admini         0.0.0.0/0       md5
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重新加载配置文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[gpadmin@mdw greenplum-db-new]$ pwd
+/home/gpadmin/greenplum-db-new
+[gpadmin@mdw greenplum-db-new]$ ./bin/gpstop  -u
+20210728:01:50:22:112099 gpstop:mdw:gpadmin-[INFO]:-Starting gpstop with args: -u
+20210728:01:50:22:112099 gpstop:mdw:gpadmin-[INFO]:-Gathering information and validating the environment...
+20210728:01:50:22:112099 gpstop:mdw:gpadmin-[INFO]:-Obtaining Greenplum Master catalog information
+20210728:01:50:22:112099 gpstop:mdw:gpadmin-[INFO]:-Obtaining Segment details from master...
+20210728:01:50:23:112099 gpstop:mdw:gpadmin-[INFO]:-Greenplum Version: &#39;postgres (Greenplum Database) 4.2.2.4 build 1 Community Edition&#39;
+20210728:01:50:23:112099 gpstop:mdw:gpadmin-[INFO]:-Signalling all postmaster processes to reload
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;gp服务器启动&#34;&gt;GP服务器启动：&lt;/h2&gt;
+&lt;p&gt;由于GP在容器内部手动安装，因此机器重启或者docker重启后需要手动启动GP&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;root@sd-cluster-01:/opt/greenplum# docker exec -it gpdb-mdw bash
+[root@mdw /]# su - gpadmin
+[gpadmin@mdw ~]$ gpstart  -a
+通过master节点登陆到其他节点
+[gpadmin@mdw ~]$ ssh sdw1
+Last login: Tue Aug 10 10:19:29 2021 from gpdb-mdw.greenplum_greenplum
+[gpadmin@sdw1 ~]$ exit
+logout
+Connection to sdw1 closed.
+[gpadmin@mdw ~]$ ssh sdw2
+Last login: Mon Aug  9 12:54:16 2021 from gpdb-mdw.greenplum_greenplum
+[gpadmin@sdw2 ~]$ exit
+logout
+Connection to sdw2 closed.
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;gp性能优化&#34;&gt;GP性能优化&lt;/h2&gt;
+&lt;p&gt;由于GP底层使用的postgresql，因此这里的优化主要以postgresql为主,对于默认的配置，我这里主要调整几个参数：&lt;/p&gt;
+&lt;p&gt;登陆master的docker,修改：/home/gpadmin/data/master/gpseg-1/postgresql.conf配置参数&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;max_connections = 800 #客户端最大会话连接数，通常防止max_connections * work_mem超出了实际内存大小
+shared_buffers = 12GB    #更多的数据缓存在shared_buffers中,通常设置为实际RAM的10％
+work_mem = 128MB #减少外部文件排序的可能，提高效率
+maintenance_work_mem = 512M  #加速建立索引,一般CREATE INDEX, VACUUM等时用到
+effective_cache_size = 20GB  #可用的系统内存
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>阿里云共享GPU方案测试</title>
+      <link>https://wnote.com/post/kubernetes-gpushare-aliyun/</link>
+      <pubDate>Tue, 31 Aug 2021 14:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-gpushare-aliyun/</guid>
+      
+        <description>&lt;h2 id=&#34;一k8s部署gpu共享插件&#34;&gt;一、k8s部署GPU共享插件&lt;/h2&gt;
+&lt;p&gt;部署之前需要确保k8s节点上已安装nvidia-driver和nvidia-docker，同时已将docker默认运行时设置为nvidia&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# cat /etc/docker/daemon.json
+{
+  &amp;quot;runtimes&amp;quot;: {
+    &amp;quot;nvidia&amp;quot;: {
+      &amp;quot;path&amp;quot;: &amp;quot;/usr/bin/nvidia-container-runtime&amp;quot;,
+        &amp;quot;runtimeArgs&amp;quot;: []
+      }
+  },
+  &amp;quot;default-runtime&amp;quot;: &amp;quot;nvidia&amp;quot;,
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;1helm安装gpushare-device-plugin&#34;&gt;1、helm安装gpushare-device-plugin&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;$ git clone https://github.com/AliyunContainerService/gpushare-scheduler-extender.git
+$ cd gpushare-scheduler-extender/deployer/chart
+$ helm install --name gpushare --namespace kube-system  --set masterCount=3 gpushare-installer
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2打label标记gpu节点&#34;&gt;2、打Label，标记GPU节点&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;$ kubectl label node sd-cluster-04 gpushare=true
+$ kubectl label node sd-cluster-05 gpushare=true
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;3安装kubectl-inspect-gpushare&#34;&gt;3、安装kubectl-inspect-gpushare&lt;/h3&gt;
+&lt;p&gt;需要提前安装kubectl，这里就省略&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ cd /usr/bin/
+$ wget https://github.com/AliyunContainerService/gpushare-device-plugin/releases/download/v0.3.0/kubectl-inspect-gpushare
+$ chmod u+x /usr/bin/kubectl-inspect-gpushare
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;查看当前k8s集群GPU资源使用情况&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ kubectl inspect gpushare
+NAME           IPADDRESS      GPU0(Allocated/Total)  GPU Memory(GiB)
+sd-cluster-04  192.168.1.214  0/14                   0/14
+sd-cluster-05  192.168.1.215  8/14                   8/14
+----------------------------------------------------------
+Allocated/Total GPU Memory In Cluster:
+8/28 (28%)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当然要禁用GPU节点共享GPU资源，直接设置gpushare=false即可&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ kubectl label node sd-cluster-04 gpushare=false
+$ kubectl label node sd-cluster-05 gpushare=false
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;二验证测试&#34;&gt;二、验证测试&lt;/h2&gt;
+&lt;h3 id=&#34;1部署第一个应用&#34;&gt;1、部署第一个应用&lt;/h3&gt;
+&lt;p&gt;申请2G GPU显存，测试应用，应该分配到一张卡上&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: binpack-1
+  labels:
+    app: binpack-1
+
+spec:
+  replicas: 1
+
+  selector: # define how the deployment finds the pods it mangages
+    matchLabels:
+      app: binpack-1
+
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: binpack-1
+
+    spec:
+      containers:
+      - name: binpack-1
+        image: cheyang/gpu-player:v2
+        resources:
+          limits:
+            # GiB
+            aliyun.com/gpu-mem: 2
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;$ kubectl apply -f 1.yaml -n test
+$ kubectl inspect gpushare
+NAME           IPADDRESS      GPU0(Allocated/Total)  GPU Memory(GiB)
+sd-cluster-04  192.168.1.214  0/14                   0/14
+sd-cluster-05  192.168.1.215  2/14                   2/14
+----------------------------------------------------------
+Allocated/Total GPU Memory In Cluster:
+2/28 (7%)
+$ kubectl get pod -n test
+NAME                               READY   STATUS    RESTARTS   AGE
+binpack-1-6d6955c487-j4c4b         1/1     Running   0          28m
+$ kubectl logs -f binpack-1-6d6955c487-j4c4b -n test
+ALIYUN_COM_GPU_MEM_DEV=14
+ALIYUN_COM_GPU_MEM_CONTAINER=2
+2021-08-13 02:47:22.395557: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2021-08-13 02:47:22.552831: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: Tesla T4 major: 7 minor: 5 memoryClockRate(GHz): 1.59
+pciBusID: 0000:af:00.0
+totalMemory: 14.75GiB freeMemory: 14.65GiB
+2021-08-13 02:47:22.552873: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -&amp;gt; (device: 0, name: Tesla T4, pci bus id: 0000:af:00.0, compute capability: 7.5)
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2部署第二个应用&#34;&gt;2、部署第二个应用&lt;/h3&gt;
+&lt;p&gt;现在申请8G内存，2个实例，总共16G内存&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: binpack-2
+  labels:
+    app: binpack-2
+
+spec:
+  replicas: 2
+
+  selector: # define how the deployment finds the pods it mangages
+    matchLabels:
+      app: binpack-2
+
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: binpack-2
+
+    spec:
+      containers:
+      - name: binpack-2
+        image: cheyang/gpu-player:v2
+        resources:
+          limits:
+            aliyun.com/gpu-mem: 8
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;$ kubectl apply -f 2.yaml -n test
+$ kubectl inspect gpushare
+NAME           IPADDRESS      GPU0(Allocated/Total)  GPU Memory(GiB)
+sd-cluster-04  192.168.1.214  8/14                   8/14
+sd-cluster-05  192.168.1.215  10/14                  10/14
+----------------------------------------------------------
+Allocated/Total GPU Memory In Cluster:
+18/28 (64%)
+$ kubectl get pod -n test
+NAME                               READY   STATUS    RESTARTS   AGE
+binpack-1-6d6955c487-j4c4b         1/1     Running   0          28m
+binpack-2-58579b95f7-4wpbl         1/1     Running   0          27m
+$ kubectl logs -f binpack-2-58579b95f7-4wpbl -n test
+ALIYUN_COM_GPU_MEM_DEV=14
+ALIYUN_COM_GPU_MEM_CONTAINER=8
+2021-08-13 02:48:41.246585: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2021-08-13 02:48:41.338992: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: Tesla T4 major: 7 minor: 5 memoryClockRate(GHz): 1.59
+pciBusID: 0000:af:00.0
+totalMemory: 14.75GiB freeMemory: 13.07GiB
+2021-08-13 02:48:41.339031: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -&amp;gt; (device: 0, name: Tesla T4, pci bus id: 0000:af:00.0, compute capability: 7.5)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过资源占用可以看到，第二个应用，已经分别使用了2张卡的8G内存&lt;/p&gt;
+&lt;h3 id=&#34;3部署第三个应用&#34;&gt;3、部署第三个应用&lt;/h3&gt;
+&lt;p&gt;申请2G显存&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: binpack-3
+  labels:
+    app: binpack-3
+
+spec:
+  replicas: 1
+
+  selector: # define how the deployment finds the pods it mangages
+    matchLabels:
+      app: binpack-3
+
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: binpack-3
+
+    spec:
+      containers:
+      - name: binpack-3
+        image: cheyang/gpu-player:v2
+        resources:
+          limits:
+            aliyun.com/gpu-mem: 2
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;$ kubectl apply -f 3.yaml -n test
+$ kubectl inspect gpushare
+NAME           IPADDRESS      GPU0(Allocated/Total)  GPU Memory(GiB)
+sd-cluster-04  192.168.1.214  8/14                   8/14
+sd-cluster-05  192.168.1.215  12/14                  12/14
+----------------------------------------------------------
+Allocated/Total GPU Memory In Cluster:
+20/28 (71%)
+$ kubectl get pod -n test
+NAME                               READY   STATUS    RESTARTS   AGE
+binpack-1-6d6955c487-j4c4b         1/1     Running   0          28m
+binpack-2-58579b95f7-4wpbl         1/1     Running   0          27m
+binpack-2-58579b95f7-sjhwt         1/1     Running   0          27m
+binpack-3-556bbd84f9-9xqg7         1/1     Running   0          14m
+$ kubectl logs -f binpack-3-556bbd84f9-9xqg7 -n test
+ALIYUN_COM_GPU_MEM_DEV=14
+ALIYUN_COM_GPU_MEM_CONTAINER=2
+2021-08-13 03:01:53.897423: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2021-08-13 03:01:54.008665: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: Tesla T4 major: 7 minor: 5 memoryClockRate(GHz): 1.59
+pciBusID: 0000:af:00.0
+totalMemory: 14.75GiB freeMemory: 7.08GiB
+2021-08-13 03:01:54.008716: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -&amp;gt; (device: 0, name: Tesla T4, pci bus id: 0000:af:00.0, compute capability: 7.5)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;部署完第三个应用以后，目前可用最大显存为8G，但是实际我们部署应用的时候最多只能使用6G，因为同一个任务不能分布式的跑到不同的GPU卡上&lt;/p&gt;
+&lt;h3 id=&#34;4部署第四个应用&#34;&gt;4、部署第四个应用&lt;/h3&gt;
+&lt;p&gt;申请5G显存，应该是调度到sd-cluster-04上&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: binpack-4
+  labels:
+    app: binpack-4
+
+spec:
+  replicas: 1
+
+  selector: # define how the deployment finds the pods it mangages
+    matchLabels:
+      app: binpack-4
+
+  template: # define the pods specifications
+    metadata:
+      labels:
+        app: binpack-4
+
+    spec:
+      containers:
+      - name: binpack-4
+        image: cheyang/gpu-player:v2
+        resources:
+          limits:
+            aliyun.com/gpu-mem: 5
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;$ kubectl apply -f 4.yaml -n test
+$ kubectl inspect gpushare
+NAME           IPADDRESS      GPU0(Allocated/Total)  GPU Memory(GiB)
+sd-cluster-04  192.168.1.214  13/14                  13/14
+sd-cluster-05  192.168.1.215  12/14                  12/14
+------------------------------------------------------------
+Allocated/Total GPU Memory In Cluster:
+25/28 (89%)
+$ kubectl get pod -n test
+NAME                               READY   STATUS    RESTARTS   AGE
+binpack-1-6d6955c487-j4c4b         1/1     Running   0          26m
+binpack-2-58579b95f7-4wpbl         1/1     Running   0          24m
+binpack-2-58579b95f7-sjhwt         1/1     Running   0          24m
+binpack-3-556bbd84f9-9xqg7         1/1     Running   0          11m
+binpack-4-6956458f85-cv62j         1/1     Running   0          6s
+$ kubectl logs -f binpack-4-6956458f85-cv62j -n test
+ALIYUN_COM_GPU_MEM_DEV=14
+ALIYUN_COM_GPU_MEM_CONTAINER=5
+2021-08-13 03:13:20.208122: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2021-08-13 03:13:20.361391: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: Tesla T4 major: 7 minor: 5 memoryClockRate(GHz): 1.59
+pciBusID: 0000:af:00.0
+totalMemory: 14.75GiB freeMemory: 6.46GiB
+2021-08-13 03:13:20.361481: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -&amp;gt; (device: 0, name: Tesla T4, pci bus id: 0000:af:00.0, compute capability: 7.5)
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;三总结&#34;&gt;三、总结&lt;/h2&gt;
+&lt;p&gt;gpushare-device-plugin使用中有如下需求不能满足&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;同一个任务没法同时使用多台机器的GPU卡（共享）&lt;/li&gt;
+&lt;li&gt;同一张卡下没法通过GPU负载百分比来分配资源&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;不过对于算法团队模型测试已经完全够用了，对于GPU共享方案，其实还有另外两种，这里我就不介绍了，有需要的直接参考官方仓库配置即可。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/tkestack/gpu-manager&#34;&gt;https://github.com/tkestack/gpu-manager&lt;/a&gt;
+&lt;a href=&#34;https://github.com/vmware/bitfusion-with-kubernetes-integration&#34;&gt;https://github.com/vmware/bitfusion-with-kubernetes-integration&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;参考资料：
+&lt;a href=&#34;https://github.com/AliyunContainerService/gpushare-scheduler-extender/tree/master/deployer&#34;&gt;https://github.com/AliyunContainerService/gpushare-scheduler-extender/tree/master/deployer&lt;/a&gt;&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>kubeadm部署高可用kubernetes集群</title>
+      <link>https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/</link>
+      <pubDate>Sun, 15 Aug 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/</guid>
+      
+        <description>&lt;p&gt;为了后便后期验证私有化部署
+，最近内网环境需要快速搭建一套k8s集群，由于之前对于规模比较大的集群，我一般采用kubeasz和kubespray来搞定，这次对于小环境集群，直接用kubeadm部署会更加高效。&lt;/p&gt;
+&lt;p&gt;下面记录kubeadm部署过程：&lt;/p&gt;
+&lt;p&gt;集群节点：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;192.168.1.206 sd-cluster-206 node
+192.168.1.207 sd-cluster-207 master,etcd
+192.168.1.208 sd-cluster-208 master,etcd,haproxy,keepalived
+192.168.1.209 sd-cluster-209 master,etcd,haproxy,keepalived
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;镜像版本：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.18.3
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:1.6.5
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.4.3-0
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2
+docker pull registry.cn-shanghai.aliyuncs.com/gcr-k8s/flannel:v0.14.0
+docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/nginx-ingress-controller:v0.48.1
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;一基本环境设置&#34;&gt;一、基本环境设置&lt;/h2&gt;
+&lt;h3 id=&#34;1安装docker并增加hosts&#34;&gt;1、安装docker并增加hosts&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;yum install -y yum-utils device-mapper-persistent-data lvm2 git
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum install docker-ce -y
+systemctl  start docker
+systemctl  enable docker
+systemctl  status docker
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2配置hosts&#34;&gt;2、配置hosts&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;cat  &amp;gt;&amp;gt;  /etc/hosts &amp;lt;&amp;lt; hhhh
+192.168.1.207 sd-cluster-207
+192.168.1.208 sd-cluster-208
+192.168.1.209 sd-cluster-209
+hhhh
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;3禁用防火墙并设置selinux&#34;&gt;3、禁用防火墙并设置selinux&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0
+sed -i &#39;s/SELINUX=permissive/SELINUX=disabled/&#39; /etc/sysconfig/selinux
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;4关闭swap&#34;&gt;4、关闭swap&lt;/h3&gt;
+&lt;p&gt;Kubernetes 1.8开始要求关闭系统的Swap，如果不关闭，默认配置下kubelet将无法启动。方法一,通过kubelet的启动参数–fail-swap-on=false更改这个限制。方法二,关闭系统的Swap。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# swapoff -a
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改/etc/fstab文件，注释掉SWAP的自动挂载，使用free -m确认swap已经关闭。&lt;/p&gt;
+&lt;h3 id=&#34;5安装所有节点的kubeadm和kubeletipvsadm&#34;&gt;5、安装所有节点的kubeadm和kubelet、ipvsadm&lt;/h3&gt;
+&lt;p&gt;参考：https://developer.aliyun.com/mirror/kubernetes&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cat &amp;lt;&amp;lt;EOF &amp;gt; /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+yum install -y --nogpgcheck  kubelet-1.18.3 kubeadm-1.18.3 ipvsadm 
+systemctl enable kubelet &amp;amp;&amp;amp; systemctl start kubelet
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ps: 由于官网未开放同步方式, 可能会有索引gpg检查失败的情况, 这时请用 yum install -y &amp;ndash;nogpgcheck kubelet kubeadm kubectl 安装&lt;/p&gt;
+&lt;p&gt;增加ipvsadm，如果重新开机，需要重新加载（可以写在 /etc/rc.local 中开机自动加载）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cat &amp;lt;&amp;lt;EOF &amp;gt;&amp;gt; /etc/rc.local
+modprobe ip_vs
+modprobe ip_vs_rr
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+modprobe nf_conntrack_ipv4
+EOF
+chmod +x /etc/rc.local
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;二keepalived配合haproxy实现负载均衡器高可用&#34;&gt;二、keepalived配合haproxy实现负载均衡器高可用&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;yum -y install keepalived haproxy
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;1keepalived配置&#34;&gt;1、keepalived配置&lt;/h3&gt;
+&lt;p&gt;192.168.1.208配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vrrp_script chk_ha {
+	script &amp;quot;killall -0 haproxy&amp;quot;  
+	interval 2 		
+	weight -20 					
+}
+
+vrrp_instance VI_1 {
+	state MASTER
+    interface bond0
+	virtual_router_id 33
+	mcast_src_ip 192.168.1.208
+	priority 100 		
+	nopreempt 			
+	advert_int 1 				
+	authentication {
+		auth_type PASS
+		auth_pass hak8s
+	}
+
+	track_script {
+		chk_ha			## 执行haproxy监测
+	}
+
+	virtual_ipaddress {
+		192.168.1.205/24		##VIP 
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;192.168.1.209配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;vrrp_script chk_ha {
+	script &amp;quot;killall -0 haproxy&amp;quot;
+	interval 2
+	weight -20
+}
+vrrp_instance VI_1 {
+	state BACKUP
+	interface bond0
+	virtual_router_id 33
+	mcast_src_ip 192.168.1.209
+	priority 90
+	advert_int 1
+	authentication {
+		auth_type PASS
+		auth_pass hak8s
+	}
+	track_script {
+		chk_ha
+	}
+	virtual_ipaddress {
+		192.168.1.205/24
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2haproxy配置&#34;&gt;2、haproxy配置&lt;/h3&gt;
+&lt;p&gt;208和209两个master的haproxy配置一样：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;global
+    log /dev/log local0
+    maxconn 65535
+    chroot /var/lib/haproxy
+    pidfile /var/run/haproxy.pid
+    stats socket /var/lib/haproxy/stats
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log global
+    retries 3
+    option redispatch
+    option dontlognull
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
+
+frontend k8s-apiserver
+    bind *:8443
+    mode tcp
+    balance roundrobin
+    server sd-cluster-04 192.168.1.207:6443 weight 5 check inter 2000 rise 2 fall 3
+    server sd-cluster-05 192.168.1.208:6443 weight 3 check inter 2000 rise 2 fall 3
+    server sd-cluster-06 192.168.1.209:6443 weight 3 check inter 2000 rise 2 fall 3
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，haproxy高可用已经搭建完成，验证方法，直接关闭208的keepalived服务，看vip是否飘逸到209机器上。&lt;/p&gt;
+&lt;h2 id=&#34;三kubeadm初始化k8s集群&#34;&gt;三、kubeadm初始化k8s集群&lt;/h2&gt;
+&lt;h3 id=&#34;1初始化第一台master&#34;&gt;1、初始化第一台master&lt;/h3&gt;
+&lt;p&gt;kubeadm-config.yaml配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta2
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: abcdef.0123456789abcdef
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.1.208
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  name: sd-cluster-208
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+---
+apiServer:
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta2
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: &amp;quot;192.168.1.208:8443&amp;quot;
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: registry.cn-hangzhou.aliyuncs.com/google_containers
+kind: ClusterConfiguration
+kubernetesVersion: v1.18.3
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+scheduler: {}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;# kubeadm init --config kubeadm-config.yaml --upload-certs
+W0828 03:02:37.249435   17451 configset.go:202] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+[init] Using Kubernetes version: v1.18.3
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected &amp;quot;cgroupfs&amp;quot; as the Docker cgroup driver. The recommended driver is &amp;quot;systemd&amp;quot;. Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using &#39;kubeadm config images pull&#39;
+[kubelet-start] Writing kubelet environment file with flags to file &amp;quot;/var/lib/kubelet/kubeadm-flags.env&amp;quot;
+[kubelet-start] Writing kubelet configuration to file &amp;quot;/var/lib/kubelet/config.yaml&amp;quot;
+[kubelet-start] Starting the kubelet
+[certs] Using certificateDir folder &amp;quot;/etc/kubernetes/pki&amp;quot;
+[certs] Generating &amp;quot;ca&amp;quot; certificate and key
+[certs] Generating &amp;quot;apiserver&amp;quot; certificate and key
+[certs] apiserver serving cert is signed for DNS names [sd-cluster-208 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.1.208 192.168.1.205]
+[certs] Generating &amp;quot;apiserver-kubelet-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;front-proxy-ca&amp;quot; certificate and key
+[certs] Generating &amp;quot;front-proxy-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;etcd/ca&amp;quot; certificate and key
+[certs] Generating &amp;quot;etcd/server&amp;quot; certificate and key
+[certs] etcd/server serving cert is signed for DNS names [sd-cluster-208 localhost] and IPs [192.168.1.208 127.0.0.1 ::1]
+[certs] Generating &amp;quot;etcd/peer&amp;quot; certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [sd-cluster-208 localhost] and IPs [192.168.1.208 127.0.0.1 ::1]
+[certs] Generating &amp;quot;etcd/healthcheck-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;apiserver-etcd-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;sa&amp;quot; key and public key
+[kubeconfig] Using kubeconfig folder &amp;quot;/etc/kubernetes&amp;quot;
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &amp;quot;admin.conf&amp;quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &amp;quot;kubelet.conf&amp;quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &amp;quot;controller-manager.conf&amp;quot; kubeconfig file
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &amp;quot;scheduler.conf&amp;quot; kubeconfig file
+[control-plane] Using manifest folder &amp;quot;/etc/kubernetes/manifests&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-apiserver&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-controller-manager&amp;quot;
+W0828 03:02:43.787797   17451 manifests.go:225] the default kube-apiserver authorization-mode is &amp;quot;Node,RBAC&amp;quot;; using &amp;quot;Node,RBAC&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-scheduler&amp;quot;
+W0828 03:02:43.789895   17451 manifests.go:225] the default kube-apiserver authorization-mode is &amp;quot;Node,RBAC&amp;quot;; using &amp;quot;Node,RBAC&amp;quot;
+[etcd] Creating static Pod manifest for local etcd in &amp;quot;/etc/kubernetes/manifests&amp;quot;
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory &amp;quot;/etc/kubernetes/manifests&amp;quot;. This can take up to 4m0s
+[apiclient] All control plane components are healthy after 23.015352 seconds
+[upload-config] Storing the configuration used in ConfigMap &amp;quot;kubeadm-config&amp;quot; in the &amp;quot;kube-system&amp;quot; Namespace
+[kubelet] Creating a ConfigMap &amp;quot;kubelet-config-1.18&amp;quot; in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Storing the certificates in Secret &amp;quot;kubeadm-certs&amp;quot; in the &amp;quot;kube-system&amp;quot; Namespace
+[upload-certs] Using certificate key:
+0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+[mark-control-plane] Marking the node sd-cluster-208 as control-plane by adding the label &amp;quot;node-role.kubernetes.io/master=&#39;&#39;&amp;quot;
+[mark-control-plane] Marking the node sd-cluster-208 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+[bootstrap-token] Using token: abcdef.0123456789abcdef
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to get nodes
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the &amp;quot;cluster-info&amp;quot; ConfigMap in the &amp;quot;kube-public&amp;quot; namespace
+[kubelet-finalize] Updating &amp;quot;/etc/kubernetes/kubelet.conf&amp;quot; to point to a rotatable kubelet client certificate and key
+[addons] Applied essential addon: CoreDNS
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run &amp;quot;kubectl apply -f [podnetwork].yaml&amp;quot; with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of the control-plane node running the following command on each as root:
+
+  kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486 \
+    --control-plane --certificate-key 0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+
+Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
+&amp;quot;kubeadm init phase upload-certs --upload-certs&amp;quot; to reload certs afterward.
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置master节点kubeconfig&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2新master节点加入集群&#34;&gt;2、新master节点加入集群&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+&amp;gt;     --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486 \
+&amp;gt;     --control-plane --certificate-key 0adac55426d376e72f21ec3aee2465f754e78810700843cb75c270be26eaeaf1
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected &amp;quot;cgroupfs&amp;quot; as the Docker cgroup driver. The recommended driver is &amp;quot;systemd&amp;quot;. Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with &#39;kubectl -n kube-system get cm kubeadm-config -oyaml&#39;
+[preflight] Running pre-flight checks before initializing the new control plane instance
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using &#39;kubeadm config images pull&#39;
+[download-certs] Downloading the certificates in Secret &amp;quot;kubeadm-certs&amp;quot; in the &amp;quot;kube-system&amp;quot; Namespace
+[certs] Using certificateDir folder &amp;quot;/etc/kubernetes/pki&amp;quot;
+[certs] Generating &amp;quot;front-proxy-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;etcd/peer&amp;quot; certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [sd-cluster-209 localhost] and IPs [192.168.1.209 127.0.0.1 ::1]
+[certs] Generating &amp;quot;etcd/healthcheck-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;apiserver-etcd-client&amp;quot; certificate and key
+[certs] Generating &amp;quot;etcd/server&amp;quot; certificate and key
+[certs] etcd/server serving cert is signed for DNS names [sd-cluster-209 localhost] and IPs [192.168.1.209 127.0.0.1 ::1]
+[certs] Generating &amp;quot;apiserver&amp;quot; certificate and key
+[certs] apiserver serving cert is signed for DNS names [sd-cluster-209 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.1.209 192.168.1.205]
+[certs] Generating &amp;quot;apiserver-kubelet-client&amp;quot; certificate and key
+[certs] Valid certificates and keys now exist in &amp;quot;/etc/kubernetes/pki&amp;quot;
+[certs] Using the existing &amp;quot;sa&amp;quot; key
+[kubeconfig] Generating kubeconfig files
+[kubeconfig] Using kubeconfig folder &amp;quot;/etc/kubernetes&amp;quot;
+[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address
+[kubeconfig] Writing &amp;quot;admin.conf&amp;quot; kubeconfig file
+[kubeconfig] Writing &amp;quot;controller-manager.conf&amp;quot; kubeconfig file
+[kubeconfig] Writing &amp;quot;scheduler.conf&amp;quot; kubeconfig file
+[control-plane] Using manifest folder &amp;quot;/etc/kubernetes/manifests&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-apiserver&amp;quot;
+W0828 03:12:57.996811   48328 manifests.go:225] the default kube-apiserver authorization-mode is &amp;quot;Node,RBAC&amp;quot;; using &amp;quot;Node,RBAC&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-controller-manager&amp;quot;
+W0828 03:12:58.009390   48328 manifests.go:225] the default kube-apiserver authorization-mode is &amp;quot;Node,RBAC&amp;quot;; using &amp;quot;Node,RBAC&amp;quot;
+[control-plane] Creating static Pod manifest for &amp;quot;kube-scheduler&amp;quot;
+W0828 03:12:58.011318   48328 manifests.go:225] the default kube-apiserver authorization-mode is &amp;quot;Node,RBAC&amp;quot;; using &amp;quot;Node,RBAC&amp;quot;
+[check-etcd] Checking that the etcd cluster is healthy
+[kubelet-start] Downloading configuration for the kubelet from the &amp;quot;kubelet-config-1.18&amp;quot; ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file &amp;quot;/var/lib/kubelet/config.yaml&amp;quot;
+[kubelet-start] Writing kubelet environment file with flags to file &amp;quot;/var/lib/kubelet/kubeadm-flags.env&amp;quot;
+[kubelet-start] Starting the kubelet
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+[etcd] Announced new etcd member joining to the existing etcd cluster
+[etcd] Creating static Pod manifest for &amp;quot;etcd&amp;quot;
+[etcd] Waiting for the new etcd member to join the cluster. This can take up to 40s
+{&amp;quot;level&amp;quot;:&amp;quot;warn&amp;quot;,&amp;quot;ts&amp;quot;:&amp;quot;2021-08-28T03:13:15.215-0400&amp;quot;,&amp;quot;caller&amp;quot;:&amp;quot;clientv3/retry_interceptor.go:61&amp;quot;,&amp;quot;msg&amp;quot;:&amp;quot;retrying of unary invoker failed&amp;quot;,&amp;quot;target&amp;quot;:&amp;quot;passthrough:///https://192.168.1.209:2379&amp;quot;,&amp;quot;attempt&amp;quot;:0,&amp;quot;error&amp;quot;:&amp;quot;rpc error: code = DeadlineExceeded desc = context deadline exceeded&amp;quot;}
+[upload-config] Storing the configuration used in ConfigMap &amp;quot;kubeadm-config&amp;quot; in the &amp;quot;kube-system&amp;quot; Namespace
+[mark-control-plane] Marking the node sd-cluster-209 as control-plane by adding the label &amp;quot;node-role.kubernetes.io/master=&#39;&#39;&amp;quot;
+[mark-control-plane] Marking the node sd-cluster-209 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+
+This node has joined the cluster and a new control plane instance was created:
+
+* Certificate signing request was sent to apiserver and approval was received.
+* The Kubelet was informed of the new secure connection details.
+* Control plane (master) label and taint were applied to the new node.
+* The Kubernetes control plane instances scaled up.
+* A new etcd member was added to the local/stacked etcd cluster.
+
+To start administering your cluster from this node, you need to run the following as a regular user:
+
+	mkdir -p $HOME/.kube
+	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+	sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Run &#39;kubectl get nodes&#39; to see this node join the cluster.
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;3新node节点加入集群&#34;&gt;3、新node节点加入集群&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubeadm join 192.168.1.205:8443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:7400f57a033f7527c80a4b015b54b4b6a88ccb2184ab9a6e39b709fb56e10486
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;4安装flannel网络组件&#34;&gt;4、安装flannel网络组件&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# wget http://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+# sed -i &#39;s#quay.io/coreos/flannel:v0.14.0#registry.cn-shanghai.aliyuncs.com/gcr-k8s/flannel:v0.14.0#g&#39; kube-flannel.yml
+# kubectl apply -f kube-flannel.yml -n kube-system
+podsecuritypolicy.policy/psp.flannel.unprivileged created
+clusterrole.rbac.authorization.k8s.io/flannel created
+clusterrolebinding.rbac.authorization.k8s.io/flannel created
+serviceaccount/flannel created
+configmap/kube-flannel-cfg created
+daemonset.apps/kube-flannel-ds created
+# kubectl get pod -n kube-system |grep flannel
+kube-flannel-ds-gtdl8                    1/1     Running   0          24s
+kube-flannel-ds-jtndz                    1/1     Running   0          24s
+kube-flannel-ds-nd79b                    1/1     Running   0          24s
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;5安装ingress&#34;&gt;5、安装ingress&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/nginx-ingress-controller:v0.48.1
+
+wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-3.35.0/ingress-nginx-3.35.0.tgz
+tar zxvf helm-chart-3.35.0.tar.gz
+cd ingress-nginx
+vim values.yaml  #更新镜像为上面的国内阿里镜像版本
+
+#helm install ingress-nginx --namespace ingress-nginx  . -n ingress-nginx
+NAME: ingress-nginx
+LAST DEPLOYED: Tue Aug 31 17:02:28 2021
+NAMESPACE: ingress-nginx
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The ingress-nginx controller has been installed.
+Get the application URL by running these commands:
+  export HTTP_NODE_PORT=$(kubectl --namespace ingress-nginx get services -o jsonpath=&amp;quot;{.spec.ports[0].nodePort}&amp;quot; ingress-nginx-controller)
+  export HTTPS_NODE_PORT=$(kubectl --namespace ingress-nginx get services -o jsonpath=&amp;quot;{.spec.ports[1].nodePort}&amp;quot; ingress-nginx-controller)
+  export NODE_IP=$(kubectl --namespace ingress-nginx get nodes -o jsonpath=&amp;quot;{.items[0].status.addresses[1].address}&amp;quot;)
+
+  echo &amp;quot;Visit http://$NODE_IP:$HTTP_NODE_PORT to access your application via HTTP.&amp;quot;
+  echo &amp;quot;Visit https://$NODE_IP:$HTTPS_NODE_PORT to access your application via HTTPS.&amp;quot;
+
+An example Ingress that makes use of the controller:
+
+  apiVersion: networking.k8s.io/v1beta1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    name: example
+    namespace: foo
+  spec:
+    rules:
+      - host: www.example.com
+        http:
+          paths:
+            - backend:
+                serviceName: exampleService
+                servicePort: 80
+              path: /
+    # This section is only required if TLS is to be enabled for the Ingress
+    tls:
+        - hosts:
+            - www.example.com
+          secretName: example-tls
+
+If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
+
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: example-tls
+    namespace: foo
+  data:
+    tls.crt: &amp;lt;base64 encoded cert&amp;gt;
+    tls.key: &amp;lt;base64 encoded key&amp;gt;
+  type: kubernetes.io/tls
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于新建Ingress参考如下设置：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-nginx
+spec:
+  rules:
+    - host: &amp;quot;my-nginx.test.com&amp;quot;
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: my-nginx
+              servicePort: 8080
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，kubeadm部署kubernetes高可用集群完成&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>阿里云PrivateZone&#43;Bind9&#43;Dnsmasq实现内部DNS</title>
+      <link>https://wnote.com/post/linux-dns-privatezone-bind9-dnsmasq/</link>
+      <pubDate>Sat, 10 Jul 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-dns-privatezone-bind9-dnsmasq/</guid>
+      
+        <description>&lt;blockquote&gt;
+&lt;p&gt;需求：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;阿里云集群能够解析内部域名&lt;/li&gt;
+&lt;li&gt;办公网解析内部域名+办公网上网解析&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;解决方法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对于第一个问题，直接使用阿里云PrivateZone解析即可&lt;/li&gt;
+&lt;li&gt;对于第二个问题，采用在PrivateZone配置内部域名zone，然后通过阿里云同步工具同步到办公网bind9服务器；
+对于办公网DNS解析入口，使用Dnsmasq处理，对于公网解析直接Forward到公网DNS，内部域名直接转发到bind9处理。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这里可能有人疑问，为什么不用bind直接实现所有内部解析呢？
+这里主要原因在实际使用中发现bind9的forward多个dns的时候并发有性能问题，偶尔会有超时现象，这一点dnsmasq做的相对出色很多。&lt;/p&gt;
+&lt;h2 id=&#34;一阿里云privatezone配置&#34;&gt;一、阿里云PrivateZone配置&lt;/h2&gt;
+&lt;p&gt;参考：https://help.aliyun.com/document_detail/64627.html&lt;/p&gt;
+&lt;h2 id=&#34;二同步阿里云zone到bind9&#34;&gt;二、同步阿里云zone到bind9&lt;/h2&gt;
+&lt;h3 id=&#34;1docker-compose搭建bind9&#34;&gt;1、docker-compose搭建bind9&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;version: &#39;2&#39;
+
+services:
+  bind:
+    restart: always
+    image: sameersbn/bind:9.16.1-20200524
+    environment:
+    - ROOT_PASSWORD=DNS2021#
+    - WEBMIN_ENABLED=true
+    - WEBMIN_INIT_SSL_ENABLED=false
+    ports:
+    - &amp;quot;15353:53/tcp&amp;quot;
+    - &amp;quot;15353:53/udp&amp;quot;
+    - &amp;quot;11953:953/tcp&amp;quot;
+    - &amp;quot;10000:10000/tcp&amp;quot; #webmin管理
+    volumes:
+    - ./data:/data
+    networks:
+      - bind9
+
+networks:
+  bind9:
+    ipam:
+      config:
+      - subnet: 10.220.0.0/16
+        gateway: 10.220.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2修改bind配置文件&#34;&gt;2、修改bind配置文件&lt;/h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;data/bind/etc/named.conf&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;include &amp;quot;/etc/bind/named.conf.options&amp;quot;;
+include &amp;quot;/etc/bind/named.conf.local&amp;quot;;
+include &amp;quot;/etc/bind/named.conf.default-zones&amp;quot;;
+key &amp;quot;rndc-key&amp;quot; {
+    algorithm hmac-sha256;
+    secret &amp;quot;tREasaE2Jal1GfwfL5iii3a88eRGKWui41l5h3v89OM=&amp;quot;;
+};
+controls {
+	inet 127.0.0.1 port 953 allow { 127.0.0.1; } keys { rndc-key; };
+	};
+logging {
+    channel query_log {
+        file &amp;quot;query.log&amp;quot; versions 10 size 50M;
+        severity info;
+        print-category yes;
+        print-severity yes;
+        print-time yes;
+    };
+    category queries {
+        query_log;
+    };
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;data/bind/etc/named.conf.options&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;options {
+	directory &amp;quot;/var/cache/bind&amp;quot;;
+    dnssec-validation no;
+    dnssec-enable no;
+    recursion yes;
+    allow-recursion { any;};
+    allow-transfer { any; };
+    allow-query-cache { any; };
+    listen-on-v6 { any; };
+    listen-on port 53 { any; };
+    forward first;
+    forwarders {
+        192.168.1.211 port 53;
+        192.168.1.212 port 53;
+        };
+    transfer-format many-answers;
+    transfers-per-ns 500;
+    recursive-clients 100000;
+    max-transfer-time-in 5;
+    transfers-in 300;
+    transfers-out 300;
+    querylog yes;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;data/bind/etc/named.conf.local&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;zone &amp;quot;sd.com&amp;quot; {
+	type master;
+	file &amp;quot;/etc/bind/zones/sd.com.zone&amp;quot;;
+    allow-update { 127.0.0.1; };
+	};
+zone &amp;quot;bgt.sdi&amp;quot; {
+	type master;
+	file &amp;quot;/etc/bind/zones/bgt.sdi.zone&amp;quot;;
+    allow-update { 127.0.0.1; };
+	};
+zone &amp;quot;con.sdi&amp;quot; {
+	type master;
+	file &amp;quot;/etc/bind/zones/con.sdi.zone&amp;quot;;
+    allow-update { 127.0.0.1; };
+	};
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;3、同步域名zone配置到bind9&lt;/p&gt;
+&lt;p&gt;参考：https://help.aliyun.com/document_detail/102718.html&lt;/p&gt;
+&lt;p&gt;这里写入到shell，编写任务计划，批量执行同步即可。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;*/5 * * * * /bin/bash /opt/bind9/update.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;update.sh&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+cd /opt/bind9/tools
+./Zone_file_sync config.json
+chown 101.101 /opt/bind9/data/bind/etc/zones/*
+docker exec bind9_bind_1 bash -c &amp;quot;rndc -c /etc/bind/rndc.conf freeze;rndc -c /etc/bind/rndc.conf reload;rndc -c /etc/bind/rndc.conf thaw&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置文件tools/config.json&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;accessKeyId&amp;quot;: &amp;quot;LIDD5ssssmGExzGsdfsY6sJrSqo&amp;quot;,
+  &amp;quot;accessKeySecret&amp;quot;: &amp;quot;C5N1TTESt74KhSTsswSSSWiz2&amp;quot;,
+  &amp;quot;zone&amp;quot;: [
+    {
+      &amp;quot;zoneName&amp;quot;: &amp;quot;sd.com&amp;quot;,
+      &amp;quot;zoneId&amp;quot;: &amp;quot;2a4dc4e0sdsfa5d36a3b88ab6482saf&amp;quot;,
+      &amp;quot;filePath&amp;quot;: &amp;quot;/opt/bind9/data/bind/etc/zones/sd.com.zone&amp;quot;
+    },
+    {
+      &amp;quot;zoneName&amp;quot;: &amp;quot;bgt.sdi&amp;quot;,
+      &amp;quot;zoneId&amp;quot;: &amp;quot;f842ca07ccsd6f35d9e294d55a0c900&amp;quot;,
+      &amp;quot;filePath&amp;quot;: &amp;quot;/opt/bind9/data/bind/etc/zones/bgt.sdi.zone&amp;quot;
+    },
+    {
+      &amp;quot;zoneName&amp;quot;: &amp;quot;con.sdi&amp;quot;,
+      &amp;quot;zoneId&amp;quot;: &amp;quot;beb4d911addsf2bd86425ds280e7bbf2&amp;quot;,
+      &amp;quot;filePath&amp;quot;: &amp;quot;/opt/bind9/data/bind/etc/zones/con.sdi.zone&amp;quot;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;三dnsmasq部署&#34;&gt;三、dnsmasq部署&lt;/h2&gt;
+&lt;h3 id=&#34;1安装配置dnsmasq&#34;&gt;1、安装配置dnsmasq&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# yum -y install dnsmasq
+# cat &amp;gt;&amp;gt; /etc/dnsmasq.conf &amp;lt;&amp;lt; Tag
+port=53
+proxy-dnssec
+no-hosts  #不加载本地/etc/hosts
+no-negcache
+dns-forward-max=2000
+server=114.114.114.114 #指定上游dns服务器
+server=223.5.5.5 #指定上游dns服务器
+server=/sd.com/127.0.0.1#15353  #转发到指定dns指定端口
+server=/bgt.sdi/127.0.0.1#15353
+server=/con.sdi/127.0.0.1#15353
+log-queries  #记录dns查询日志
+log-facility=/var/log/dnsmasq/dnsmasq.log #指定日志路径
+log-async=50
+cache-size=100000
+Tag
+# systemctl  start dnsmasq
+# systemctl  enable dnsmasq
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;2配置dnsmasq日志轮训策略&#34;&gt;2、配置dnsmasq日志轮训策略：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;#cat &amp;gt;&amp;gt; /etc/logrotate.d/dnsmasq Tag
+/var/log/dnsmasq/dnsmasq.log {
+notifempty
+daily
+dateext
+rotate 15
+sharedscripts
+postrotate
+[ ! -f /var/run/dnsmasq.pid ] || kill -USR2 `cat /var/run/dnsmasq.pid`
+endscript
+}
+Tag
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;测试执行&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;logrotate -vf  /etc/logrotate.conf
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;四新增一个新zone需要做哪些操作&#34;&gt;四、新增一个新zone，需要做哪些操作？&lt;/h2&gt;
+&lt;p&gt;bind和dnsmasq需要如下变更:&lt;/p&gt;
+&lt;p&gt;例如：新增test.com&lt;/p&gt;
+&lt;p&gt;1、/etc/dnsmasq.conf增加server=/test.com/127.0.0.1#15353&lt;/p&gt;
+&lt;p&gt;2、/opt/bind9/data/bind/etc/named.conf.local新增如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;zone &amp;quot;test.com&amp;quot; {
+    type master;
+    file &amp;quot;/etc/bind/zones/test.com.zone&amp;quot;;
+    allow-update { 127.0.0.1; };
+    forwarders {};
+    };
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;五k8s集群内部如何接入内部dns&#34;&gt;五、k8s集群内部如何接入内部DNS&lt;/h2&gt;
+&lt;p&gt;1、修改集群节点/etc/resolv.conf为内部DNS&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;options timeout:1 attempts:1 rotate
+nameserver 192.168.1.211
+nameserver 192.168.1.212
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2、coredns对于无法解析的直接forward走&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Corefile: |
+  .:53 {
+      errors
+      health
+      kubernetes cluster.local in-addr.arpa ip6.arpa {
+         pods insecure
+         upstream
+         fallthrough in-addr.arpa ip6.arpa
+      }
+      prometheus :9153
+      forward . /etc/resolv.conf
+      cache 30
+      loop
+      reload
+      loadbalance
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，整个内部DNS解析实现完成。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>Argo Events入门实践</title>
+      <link>https://wnote.com/post/cicd-argo-events-automate-task/</link>
+      <pubDate>Wed, 07 Jul 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argo-events-automate-task/</guid>
+      
+        <description>&lt;p&gt;前面我们介绍了Argo Workflow如何安装与触发任务，这一篇主要介绍一个新工具：&lt;/p&gt;
+&lt;h2 id=&#34;argoevents是什么&#34;&gt;ArgoEvents是什么？&lt;/h2&gt;
+&lt;p&gt;Argo Events是一个事件驱动的 Kubernetes 工作流自动化框架。它支持20 多种不同的事件（例如 webhook、S3 drop、cronjob、消息队列-例如 Kafka、GCP PubSub、SNS、 SQS等）&lt;/p&gt;
+&lt;h3 id=&#34;特性&#34;&gt;特性：&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;支持来自&lt;a href=&#34;https://argoproj.github.io/argo-events/concepts/event_source/&#34;&gt;20多个事件源&lt;/a&gt;和10多个&lt;a href=&#34;https://argoproj.github.io/argo-events/concepts/trigger/&#34;&gt;触发器的事件&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;能够为工作流自动化定制业务级约束逻辑。&lt;/li&gt;
+&lt;li&gt;管理从简单、线性、实时到复杂、多源事件的所有内容。&lt;/li&gt;
+&lt;li&gt;符合&lt;a href=&#34;https://cloudevents.io/&#34;&gt;CloudEvents&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;组件&#34;&gt;组件：&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;EventSource(类似Gateway,把消息发送给eventbus)&lt;/li&gt;
+&lt;li&gt;EventBus(事件消息队列，基于高性能分布式消息中间件NATS实现，不过看NATS官网到2023年后不再维护了，估计后期架构也会调整)&lt;/li&gt;
+&lt;li&gt;EventSensor(订阅消息队列，事件参数化并对事件过滤)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;argoevents部署安装&#34;&gt;ArgoEvents部署安装&lt;/h2&gt;
+&lt;h3 id=&#34;argo-events部署&#34;&gt;argo-events部署：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl create ns argo-events
+kubectl apply -n argo-events -f https://raw.githubusercontent.com/argoproj/argo-events/v1.2.3/manifests/install.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;argo-eventbus部署&#34;&gt;argo-eventbus部署:&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl apply -n argo-events -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;rbac账户授权&#34;&gt;RBAC账户授权&lt;/h2&gt;
+&lt;h3 id=&#34;创建operate-workflow-sa账户&#34;&gt;创建operate-workflow-sa账户&lt;/h3&gt;
+&lt;p&gt;授权operate-workflow-sa可以在argo-events namespace下创建argo workflow任务，这个对于后边EventSensor自动化创建workflow会用到。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: argo-events
+  name: operate-workflow-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: operate-workflow-role
+  namespace: argo-events
+rules:
+  - apiGroups:
+      - argoproj.io
+    verbs:
+      - &amp;quot;*&amp;quot;
+    resources:
+      - workflows
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operate-workflow-role-binding
+  namespace: argo-events
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operate-workflow-role
+subjects:
+  - kind: ServiceAccount
+    name: operate-workflow-sa
+    namespace: argo-events
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建workflow-pods-sa账户&#34;&gt;创建workflow-pods-sa账户&lt;/h3&gt;
+&lt;p&gt;授权workflow-pods-sa可以在argo-events下通过workflow自动创建pod&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: argo-events
+  name: workflow-pods-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow-pods-role
+rules:
+  - apiGroups:
+      - &amp;quot;&amp;quot;
+    verbs:
+      - &amp;quot;*&amp;quot;
+    resources:
+      - pods
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow-pods-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: workflow-pods-role
+subjects:
+  - kind: ServiceAccount
+    name: workflow-pods-sa
+    namespace: argo-events
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;argoevents自动化触发任务&#34;&gt;ArgoEvents自动化触发任务&lt;/h2&gt;
+&lt;h3 id=&#34;启动一个event-sources接受请求&#34;&gt;启动一个event-sources接受请求：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl apply -n argo-events -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/event-sources/webhook.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意：这里event-sources里name为example，对于实际生产环境下边创建sensor需要指定这里的名称&lt;/p&gt;
+&lt;h3 id=&#34;创建-webhook方式sensor消费请求&#34;&gt;创建 webhook方式sensor消费请求：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook
+      eventName: example
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: webhook-
+              spec:
+                serviceAccountName: workflow-pods-sa
+                entrypoint: whalesay
+                arguments:
+                  parameters:
+                  - name: message
+                    # the value will get overridden by event payload from test-dep
+                    value: hello world
+                templates:
+                - name: whalesay
+                  inputs:
+                    parameters:
+                    - name: message
+                  container:
+                    image: docker/whalesay:latest
+                    command: [cowsay]
+                    args: [&amp;quot;{{inputs.parameters.message}}&amp;quot;]
+          parameters:
+            - src:
+                dependencyName: test-dep
+              dest: spec.arguments.parameters.0.value
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;参考：https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/sensors/webhook.yaml&lt;/p&gt;
+&lt;h3 id=&#34;forward本地请求到远端&#34;&gt;forward本地请求到远端：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;kubectl -n argo-events port-forward &amp;lt;name-of-event-source-pod&amp;gt;  &amp;lt;local port&amp;gt;:12000
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;往event-sources筛数据&#34;&gt;往event-sources筛数据：&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;curl -d &#39;{&amp;quot;message&amp;quot;:&amp;quot;ok&amp;quot;}&#39; -H &amp;quot;Content-Type: application/json&amp;quot; -X POST http://localhost:12000/example
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，通过ArgoEvents就可以自动化创建workflow任务了&lt;/p&gt;
 </description>
       
     </item>
@@ -2466,417 +4213,6 @@ deployment &amp;quot;rancher&amp;quot; successfully rolled out
 NAME      READY   UP-TO-DATE   AVAILABLE   AGE
 rancher   3/3     3            3           5m5s
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，整个K8S集群已经搭建完毕，如果顺利的话，整个过程应该在10分钟左右，重要的是提前规划好集群。&lt;/p&gt;
-</description>
-      
-    </item>
-    
-    <item>
-      <title>基于K8S部署gitlab-runner</title>
-      <link>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</link>
-      <pubDate>Thu, 14 Nov 2019 17:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</guid>
-      
-        <description>&lt;h2 id=&#34;部署gitlab-runner&#34;&gt;部署gitlab-runner&lt;/h2&gt;
-&lt;p&gt;这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitlab-runner.git&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;helm install --namespace gitlab-managed-apps --name k8s-gitlab-runner -f  values.yaml 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;注意：values.yaml文件需要设置privileged: true&lt;/p&gt;
-&lt;h2 id=&#34;构建基础镜像docker-in-docker&#34;&gt;构建基础镜像(docker in docker)&lt;/h2&gt;
-&lt;p&gt;Dockerfile文件内容：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;FROM docker:19.03.1-dind
-WORKDIR /opt
-RUN echo &amp;quot;nameserver 114.114.114.114&amp;quot; &amp;gt;&amp;gt; /etc/resolv.conf
-RUN sed -i &#39;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#39; /etc/apk/repositories
-RUN apk update
-RUN apk upgrade
-RUN apk add g++ gcc make docker docker-compose  git
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;构建镜像并推送到harbor&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;docker build -t registry.test.cn/devops/docker-tool:19.03.1  .
-docker push  registry.test.cn/devops/docker-tool:19.03.1
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;gitlab-ci测试&#34;&gt;Gitlab-CI测试&lt;/h2&gt;
-&lt;p&gt;.gitlab-ci.yml文件内容如下:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;image: registry.test.cn/devops/docker-tool:19.03.1
-
-variables:
-  REPO_NAME: gitlab.test.cn/xxx/xxxx
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: &amp;quot;&amp;quot;
-  
-before_script:
-  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
-  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
-  - cd $GOPATH/src/$REPO_NAME
-
-stages:
-  - deploy
-
-deploy:
-  tags:
-    - k8s-gitlab-runner #指定runner
-  only:
-    - tags
-  stage: deploy
-  services:
-    - registry.test.cn/devops/docker-tool:19.03.1
-  script:
-    - export DOCKER_HOST=&#39;tcp://localhost:2375&#39;
-    - docker login -u &amp;quot;$Harbor_bce_user&amp;quot; -p &amp;quot;$Harbor_ecs_passwd&amp;quot; $Harbor_ecs_address #gitlab后台设置统一变量
-    - make deploy VERSION=$CI_COMMIT_REF_NAME #根据git tag构建镜像
-&lt;/code&gt;&lt;/pre&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>基于Docker-compose搭建jenkins</title>
-      <link>https://wnote.com/post/cicd-jenkins-install/</link>
-      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
-      
-        <description>&lt;h2 id=&#34;docker-compose配置&#34;&gt;docker-compose配置&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;version: &#39;2&#39;
- 
-services:
-  jenkins:
-    image: jenkins/jenkins:latest
-    restart: always
-    environment:
-      JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot;
-    ports:
-      - &amp;quot;80:8080&amp;quot;
-      - &amp;quot;50000:50000&amp;quot;
-    volumes:
-      - &#39;/ssd/jenkins:/var/jenkins_home&#39;
-      - &#39;/var/run/docker.sock:/var/run/docker.sock&#39;
-      - &#39;/etc/localtime:/etc/localtime:ro&#39;
-    dns: 223.5.5.5
-    networks:
-      - extnetwork
-networks:
-   extnetwork:
-      ipam:
-         config:
-         - subnet: 172.255.0.0/16
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;启动服务&#34;&gt;启动服务&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;docker-compose  up -d 
-&lt;/code&gt;&lt;/pre&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>Mac系统配置炫酷终端(oh my zsh)</title>
-      <link>https://wnote.com/post/tools-zsh-cool-install/</link>
-      <pubDate>Sat, 10 Nov 2018 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/tools-zsh-cool-install/</guid>
-      
-        <description>&lt;h1 id=&#34;brew工具&#34;&gt;brew工具&lt;/h1&gt;
-&lt;p&gt;官网:https://brew.sh&lt;/p&gt;
-&lt;p&gt;安装brew&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/usr/bin/ruby -e &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改brew源为国内源&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;git -C &amp;quot;$(brew --repo)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git
-git -C &amp;quot;$(brew --repo homebrew/core)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git
-git -C &amp;quot;$(brew --repo homebrew/cask)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-cask.git
-export HOMEBREW_BOTTLE_DOMAIN=https://mirrors.aliyun.com/homebrew/homebrew-bottles #追加到~/.zshrc
-brew update  #更新homebrew
-brew upgrade #升级所有已经安装包
-brew cleanup #升级完成后清理旧版本包
-&lt;/code&gt;&lt;/pre&gt;&lt;h1 id=&#34;iterm2&#34;&gt;iterm2&lt;/h1&gt;
-&lt;p&gt;安装iterm2&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;brew cask install iterm2
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Preferences&amp;ndash;&amp;gt;Appearance&amp;ndash;&amp;gt;Theme 选择自己喜欢主题,我这里选择了Light&lt;/li&gt;
-&lt;li&gt;Preferences&amp;ndash;&amp;gt;Profiles&amp;ndash;&amp;gt;Colors 配置自己喜欢颜色&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h1 id=&#34;oh-my-zsh&#34;&gt;Oh my zsh&lt;/h1&gt;
-&lt;p&gt;官网:https://ohmyz.sh&lt;/p&gt;
-&lt;p&gt;安装oh my zsh:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sh -c &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;所有可选oh my zsh主题: &lt;a href=&#34;https://github.com/ohmyzsh/ohmyzsh/wiki/Themes&#34;&gt;https://github.com/ohmyzsh/ohmyzsh/wiki/Themes&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;所有oh my zsh插件: &lt;a href=&#34;https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins&#34;&gt;https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins&lt;/a&gt;&lt;/p&gt;
-&lt;h1 id=&#34;炫酷主题&#34;&gt;炫酷主题&lt;/h1&gt;
-&lt;p&gt;我这里选择了自己喜欢的&lt;a href=&#34;https://github.com/denysdovhan/spaceship-prompt&#34;&gt;spaceship-prompt&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;安装主题所需字体并设置FiraCode&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;git clone https://github.com/powerline/fonts
-cd fonts
-./install.sh
-brew tap homebrew/cask-fonts
-brew cask install font-fira-code
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;字体选择：fira code&lt;/p&gt;
-&lt;p&gt;至此,我的炫酷终端已经搞定。&lt;/p&gt;
-</description>
-      
-    </item>
-    
-    <item>
-      <title>Git日常命令总结</title>
-      <link>https://wnote.com/post/linux-git-commands-base/</link>
-      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/linux-git-commands-base/</guid>
-      
-        <description>&lt;h2 id=&#34;git全局设置&#34;&gt;Git全局设置：&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git config --global user.name &amp;quot;wanzi&amp;quot;
-git config --global user.email &amp;quot;iwz2099@163.com&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git提交代码&#34;&gt;Git提交代码&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git clone git@github.com:iwz2099/test.git
-cd test
-touch README.md
-git add README.md
-git commit -m &amp;quot;add README&amp;quot;
-git push -u origin master
-#上面命令将本地的master分支推送到远程origin分值，同时-u指定当前仓库的默认远程分支名为origin，后面就可以不加任何参数使用git push了
-
-#包含本地分支都推送到origin主机
-git push -u origin --all  
-
-#如果本地是基于case_dev_wanzi分支开发,推送到远程case_dev分支
-git push origin case_dev_wanzi:case_dev
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git查询和清理&#34;&gt;Git查询和清理&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git status   #查询当前分支状态信息
-git log      #查看当前分支commit信息
-git log -n3  #查询最近三次提交commit 
-git log -p  -2  #查询每次提交的内容差异，只显示最近2条提交记录，
-git log --stat  #查询每次提交的简历统计信息
-git log --pretty=oneline #将每次提交的信息一行显示,oneline可以是short,full,fuller
-git log --pretty=format:&amp;quot;%h - %an, %ar : %s&amp;quot;
-git log --pretty=format:&amp;quot;%h %s&amp;quot; --graph  #ASCII字符串来形象地展示你的分支、合并历史
-git reflog #显示所有分支所有操作信息(包括commit,reset和已经删除的commit)
-git reflog #显示最近10条日志
-git grep -n   wanzi  #搜索提交历史和工作目录
-git grep --count   wanzi  #搜索显示次数
-git clean  #移除没有忽略的未跟踪文件
-git clean -d  #清理工作目录
-git clean -d -n  #-n测试清理工作目录，实际未清理
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git分支操作&#34;&gt;Git分支操作：&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git branch #查看当前分支
-git branch -v #查看每个分支的最后一次提交
-#基于远程master分支创建本地dev分支
-git checkout -b dev  origin/master 
-
-git branch --merged #查看哪些分支合并到当前分支
-git branch --no-merged #查看哪些分支尚未合并到当前分支
-
-#新开发一个功能，-b创建分支，并切换到新创建的分支上
-git checkout -b dev-20180720-111111-wanzi
-相当于：
-git branch r-20180720-111111-wanzi
-git checkout r-20180720-111111-wanzi
-
-将开发后功能合并到Master主干
-git checkout master
-git merge  dev-20180720-111111-wanzi
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git合并操作&#34;&gt;Git合并操作&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;#基于远程master新建分支issue54,基于该分支进行开发项目
-git remote add origin git@github.com:iwz2099/test.git
-git  checkout -b issue54  origin/master
-
-#功能开发完后向把开发后的功能合并到远程分支
-git  fetch origin    #拉去差异信息
-git  merge origin/master  #合并远程分支到当前项目
-git  push origin master  #推送代码到远程分支
-
-git  log --no-merges issue54..origin/master  #查看master哪些信息没有合并到issue54分支里。
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git-tag操作&#34;&gt;Git tag操作&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git tag   #列出当前项目tag信息
-git tag -l &#39;wanzi-2018*&#39;   #-l还可以只列出自己的分支
-git tag  v1.8-20180720   #创建标签（一般临时用）
-git tag -a  v1.8-20180720  -m &#39;wanzi version 1.8&#39;   #-a创建tag，-m并添加说明，会存储tag信息
-git  show  v1.8-20180720  #查看标签信息，这个时候可以对比下git tag -a和git tag差别
-git push origin tag_name    #推送tag到远程仓库
-git push origin  --tags      #一次性推送很多tag到远程仓库
-git push origin :tag_name   #删除远程tag信息
-git checkout -b   dev-20180720-111111-wanzi    v1.2.0  #基于某个分支新建一个tag版本
-git branch -D  dev-20180720-123333-wanzi   #强制删除一个没有合并的分支
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git多人协作&#34;&gt;Git多人协作：&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;#A码农基于远程master新建分支feature1
-git checkout -b feature1 origin/master
-
-#B码农基于远程master新建分支feature11
-git checkout -b feature11 origin/master
-
-#A码农先开发完，并推送代码到远程服务的feature1分支,B码农后开发完，想把改过信息合并到feature1
-git fetch origin
-git merge origin/feature1
-git push -u origin feature11:feature1
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git取消暂存区文件和取消文件修改&#34;&gt;Git取消暂存区文件和取消文件修改&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;#代码git add到缓存区，并未commit提交，回滚代码
-git reset HEAD .  或者
-git reset HEAD a.txt
-这个命令仅改变暂存区，并不改变工作区，这意味着在无任何其他操作的情况下，工作区中的实际文件同该命令运行之前无任何变化
-
-git checkout --  .    #取消路径所有修改，回到上一个commit版本
-git checkout -- a.txt #取消a.txt所有改动，回到上一个commit版本
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git回滚到上次提交版本&#34;&gt;Git回滚到上次提交版本&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;git log
-git reset --hard  &amp;lt;commit_id&amp;gt;  #回退一次提交的commit id
-git reset --hard HEAD^  #回退到上一版本 
-git reset --hard HEAD^^ #回退到倒数第二版
-git reset --hard HEAD~4 #回退到倒数第四版
-
-git push origin HEAD --force # 强制提交一次，之前错误的提交就从远程仓库删除(拥有项目管理权限的时候一定要慎重)
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git回滚master代码到某个tag版本&#34;&gt;Git回滚master代码到某个tag版本&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;基于release tag新建回滚临时分支，并将分支强制推送到远程master&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;git checkout -b rollback_20180720  r-20180720-111225-wanzi
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;gitlab的项目setting里master项目管理员取消master保护&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;强制推送rollback_20180720分支到远程master主干(这个过程会强制回退到r-20180720-111225-wanzi这个版本)&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;git push origin rollback_20180720:master -f
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;git其他操作&#34;&gt;Git其他操作&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;提交信息写错，还没提交,修改提交信息&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;git commit --amend --only -m &#39;fix: 修复一个bug&#39;  #修改提交信息
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;提交用户名和邮箱写错了，还没提交,修改提交信息&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;git commit --amend --author=&amp;quot;wanzi &amp;lt;iwz2099@163.com&amp;gt;&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>Dockerfile多阶段构建</title>
-      <link>https://wnote.com/post/docker-dockerfile-multi-stage/</link>
-      <pubDate>Mon, 02 Jul 2018 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/docker-dockerfile-multi-stage/</guid>
-      
-        <description>&lt;p&gt;Docker多阶段构建理解:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;构建镜像需要有一个基础镜像,后续操作就会基于该基础镜像构建&lt;/li&gt;
-&lt;li&gt;docker镜像文件里有层级概念,每执行一次RUN指令,镜像就会多一层,所以通过减少层级来减少镜像大小&lt;/li&gt;
-&lt;li&gt;多个from的时候,只有最后一个from的镜像才是镜像的根镜像&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;自己项目部署中多阶段构建示例, 这里基于golang基础镜像编译以后的二进制直接copy到基于alpine构建的最小镜像里:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;FROM golang:1.12.7 as build
-MAINTAINER wanzi &amp;lt;iwz2099@163.com&amp;gt;
- 
-# 编译配置相关
-ARG NAME=gaia
-ARG FLAGS=-tags=jsoniter
-ARG GOOS=linux
-ARG GOARCH=amd64
-ARG PORT_TO_EXPOSE=10020
- 
-ENV GOPROXY https://mirrors.aliyun.com/goproxy/
-ENV GO111MODULE on
- 
-WORKDIR /opt/gaia
-COPY . .
-RUN GOOS=$GOOS GOARCH=$GOARCH go build -mod vendor -ldflags=&amp;quot;-s -w&amp;quot; -o $NAME $FLAGS
- 
-FROM alpine
-WORKDIR /opt/gaia
-COPY --from=build /opt/gaia/gaia .
-RUN mkdir -p /opt/gaia/conf
-VOLUME [&amp;quot;/opt/gaia/conf&amp;quot;]
- 
-CMD [&amp;quot;./gaia&amp;quot;]
-EXPOSE $PORT_TO_EXPOSE
-&lt;/code&gt;&lt;/pre&gt;</description>
-      
-    </item>
-    
-    <item>
-      <title>Dockerfile语法详情</title>
-      <link>https://wnote.com/post/docker-dockerfile-details/</link>
-      <pubDate>Thu, 21 Jun 2018 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/docker-dockerfile-details/</guid>
-      
-        <description>&lt;h2 id=&#34;from&#34;&gt;FROM&lt;/h2&gt;
-&lt;p&gt;指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共库pull镜像下来。
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;FROM ubuntu:14.04  #继承ubuntu:14.04
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;maintainer&#34;&gt;MAINTAINER&lt;/h2&gt;
-&lt;p&gt;指定创建者信息&lt;/p&gt;
-&lt;p&gt;MAINTAINER wanzi &amp;ldquo;&lt;a href=&#34;mailto:iwz2099@163.com&#34;&gt;iwz2099@163.com&lt;/a&gt;&amp;rdquo;&lt;/p&gt;
-&lt;h2 id=&#34;env&#34;&gt;ENV&lt;/h2&gt;
-&lt;p&gt;设置环境变量，会被后续 RUN 指令使用，并在容器运行时保持。
-ENV &lt;key&gt; &lt;value&gt;       # 只能设置一个变量
-ENV &lt;key&gt;=&lt;value&gt; &amp;hellip;   # 允许一次设置多个变量
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;ENV LANG en_US.UTF-8
-ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;run&#34;&gt;RUN&lt;/h2&gt;
-&lt;p&gt;RUN &lt;command&gt; 或 RUN [&amp;ldquo;executable&amp;rdquo;, &amp;ldquo;param1&amp;rdquo;, &amp;ldquo;param2&amp;rdquo;]。
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;RUN yum -y install bind-utils
-RUN [&amp;quot;/bin/bash&amp;quot;, &amp;quot;-c&amp;quot;, &amp;quot;yum -y install bind-utils&amp;quot;]
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;前者将在shell终端中运行命令,即 /bin/sh -c yum -y install bind-utils；后者则使用exec执行。指定使用其它终端可以通过第二种方式实现。
-每条RUN指令将在当前镜像基础上执行指定命令，并提交为新的镜像，后续的RUN都在之前RUN提交后的镜像为基础，镜像是分层的，可以通过一个镜像的任何一个历史提交点来创建，类似源码的版本控制。当命令较长时可以使用 \ 来换行。&lt;/p&gt;
-&lt;h2 id=&#34;copy&#34;&gt;COPY:&lt;/h2&gt;
-&lt;p&gt;COPY &lt;src&gt; &lt;dest&gt;
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;COPY script/ /build/script/
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;复制本地主机的&lt;src&gt;（为Dockerfile所在目录的相对路径）到容器中的 &lt;dest&gt;,当使用本地目录为源目录时，推荐使用 COPY。&lt;/p&gt;
-&lt;h2 id=&#34;add&#34;&gt;ADD&lt;/h2&gt;
-&lt;p&gt;ADD &lt;src&gt; &lt;dest&gt;
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;ADD https://www.baidu.com/index.html   /var/www/html/
-ADD ubuntu-xenial-core-cloudimg-amd64-root.tar.gz /
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;该命令将复制指定的 &lt;src&gt; 到容器中的 &lt;dest&gt;。 其中&lt;src&gt;可以是Dockerfile所在目录的一个相对路径；也可以是一个 URL(自动下载后复制到容器)；还可以是一个tar文件（自动解压为目录）。&lt;/p&gt;
-&lt;h2 id=&#34;volume&#34;&gt;VOLUME&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;VOLUME [ &amp;quot;/data&amp;quot; ]
-VOLUME [ &amp;quot;/var/lib/redis&amp;quot;, &amp;quot;/var/log/redis&amp;quot; ]
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;声明一个数据卷, 可用于挂载, []里面是路径，创建一个可以从本地主机或其他容器挂载的挂载点，一般用来存放数据库和需要保持的数据等。&lt;/p&gt;
-&lt;h2 id=&#34;user&#34;&gt;USER&lt;/h2&gt;
-&lt;p&gt;USER &lt;uid&gt;
-镜像正在运行时设置的一个UID,RUN命令执行时的用户&lt;/p&gt;
-&lt;h2 id=&#34;cmd&#34;&gt;CMD&lt;/h2&gt;
-&lt;p&gt;支持三种格式
-CMD [&amp;ldquo;executable&amp;rdquo;,&amp;ldquo;param1&amp;rdquo;,&amp;ldquo;param2&amp;rdquo;] 使用 exec 执行，推荐方式；
-CMD command param1 param2 在 /bin/sh 中执行，提供给需要交互的应用；
-CMD [&amp;ldquo;param1&amp;rdquo;,&amp;ldquo;param2&amp;rdquo;] 提供给 ENTRYPOINT 的默认参数；
-指定启动容器时执行的命令，每个 Dockerfile 只能有一条 CMD 命令。如果指定了多条命令，只有最后一条会被执行。&lt;/p&gt;
-&lt;h2 id=&#34;workdir&#34;&gt;WORKDIR&lt;/h2&gt;
-&lt;p&gt;指定RUN、CMD与ENTRYPOINT命令的工作目录
-例子:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;WORKDIR /opt/nodeapp
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;onbuild&#34;&gt;ONBUILD&lt;/h2&gt;
-&lt;p&gt;ONBUILD [INSTRUCTION]
-配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令。&lt;/p&gt;
-&lt;p&gt;例如:Dockerfile使用如下的内容创建了镜像image-A。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;ONBUILD ADD . /app/src
-ONBUILD RUN /usr/local/bin/python-build --dir /app/src
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;例如:如果基于 image-A 创建新的镜像时，新的Dockerfile中使用 FROM image-A指定基础镜像时，会自动执行 ONBUILD 指令内容，等价于在后面添加了两条指令。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;FROM image-A
-#Automatically run the following
-ADD . /app/src
-RUN /usr/local/bin/python-build --dir /app/src
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用 ONBUILD 指令的镜像，推荐在标签中注明，例如 ruby:1.9-onbuild。&lt;/p&gt;
-&lt;h2 id=&#34;entrypoint&#34;&gt;ENTRYPOINT&lt;/h2&gt;
-&lt;p&gt;配置容器启动后执行的命令，并且不可被docker run提供的参数覆盖，而CMD是可以被覆盖的。如果需要覆盖，则可以使用docker run &amp;ndash;entrypoint选项。每个Dockerfile中只能有一个ENTRYPOINT，当指定多个时，只有最后一个生效。
-支持两种格式
-ENTRYPOINT [ &amp;ldquo;nodejs&amp;rdquo;, &amp;ldquo;server.js&amp;rdquo; ]
-ENTRYPOINT command param1 param2（shell中执行）&lt;/p&gt;
-&lt;h2 id=&#34;expose&#34;&gt;EXPOSE&lt;/h2&gt;
-&lt;p&gt;EXPOSE &lt;port&gt;
-告知服务器容器在运行时监听的端口,在启动容器时需要通过 -P，Docker 主机会自动分配一个端口转发到指定的端口。
-例子：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;EXPOSE 3000
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;注意事项&#34;&gt;注意事项&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;尽量精简,不安装多余的软件包&lt;/li&gt;
-&lt;li&gt;编写.dockerignore 文件,排除一些目录和文件,语法类似于.gitignore&lt;/li&gt;
-&lt;li&gt;尽量选择 Docker官方提供镜像作为基础版本,减少镜像体积.&lt;/li&gt;
-&lt;li&gt;Dockerfile开头几行的指令应当固定下来,不建议频繁更改,有效利用缓存.&lt;/li&gt;
-&lt;li&gt;多条RUN命令使用&amp;rsquo;&#39;连接,有利于理解且方便维护.&lt;/li&gt;
-&lt;li&gt;COPY与ADD优先使用前者&lt;/li&gt;
-&lt;li&gt;通过-t标记构建镜像,有利于管理新创建的镜像.&lt;/li&gt;
-&lt;li&gt;不在Dockerfile中映射公有端口.&lt;/li&gt;
-&lt;li&gt;Push前先在本地运行,确保构建的镜像无误.&lt;/li&gt;
-&lt;/ul&gt;
 </description>
       
     </item>

@@ -295,6 +295,222 @@
   <header class="post-header">
     <h1 class="post-title">
       
+      <a class="post-link" href="/post/kubernetes-add-user/">kubernetes集群添加用户</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2019-12-31" class="post-time">
+        2019-12-31
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/kubernetes/"> kubernetes </a>
+          
+        </div>
+      <span class="more-meta"> 约 1412 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      之前通过ansible搭建了kubernetes集群环境,这里需求主要是添加一个用户进行日常管理，并限制到指定的namespace，接下来进
+    </div>
+    <div class="read-more">
+      <a href="/post/kubernetes-add-user/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
+      <a class="post-link" href="/post/kubernetes-traefik-v2.1-deploy/">kubernetes集群部署traefik2.1</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2019-12-17" class="post-time">
+        2019-12-17
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/kubernetes/"> kubernetes </a>
+          
+        </div>
+      <span class="more-meta"> 约 1981 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      架构&amp;概念 Traefik2.x版本相比1.7.x架构有很大变化，正如上边这张架构图，最主要的功能是支持了TCP协议、增加了Route
+    </div>
+    <div class="read-more">
+      <a href="/post/kubernetes-traefik-v2.1-deploy/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
+      <a class="post-link" href="/post/kubernetes-kubeasz-deploy-automation/">kubeasz部署k8s集群</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2019-12-12" class="post-time">
+        2019-12-12
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/kubernetes/"> kubernetes </a>
+          
+        </div>
+      <span class="more-meta"> 约 1081 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      环境准备 Master节点 172.16.244.14 172.16.244.16 172.16.244.18 Node节点 172.16.244.25 172.16.244.27 Master节点VIP地址: 172.16.243.13 部署工具:Ansible/kubeasz 初始化环境 安装Ansib
+    </div>
+    <div class="read-more">
+      <a href="/post/kubernetes-kubeasz-deploy-automation/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
+      <a class="post-link" href="/post/cicd-gitlab-k8s-gitlabrunner/">基于K8S部署gitlab-runner</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2019-11-14" class="post-time">
+        2019-11-14
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/cicd/"> cicd </a>
+          
+        </div>
+      <span class="more-meta"> 约 328 字 </span>
+      <span class="more-meta"> 预计阅读 1 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      部署gitlab-runner 这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitl
+    </div>
+    <div class="read-more">
+      <a href="/post/cicd-gitlab-k8s-gitlabrunner/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
+      <a class="post-link" href="/post/cicd-jenkins-install/">基于Docker-compose搭建jenkins</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2019-11-11" class="post-time">
+        2019-11-11
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/cicd/"> cicd </a>
+          
+        </div>
+      <span class="more-meta"> 约 60 字 </span>
+      <span class="more-meta"> 预计阅读 1 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      docker-compose配置 version: '2' services: jenkins: image: jenkins/jenkins:latest restart: always environment: JAVA_OPTS: &quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&quot; ports: - &quot;80:8080&quot; - &quot;50000:50000&quot; volumes: - '/ssd/jenkins:/var/jenkins_home' - '/var/run/docker.sock:/var/run/docker.sock' - '/etc/localtime:/etc/localtime:ro' dns: 223.5.5.5 networks: - extnetwork networks: extnetwork: ipam: config: - subnet: 172.255.0.0/16 启动服务 docker-compose up -d
+    </div>
+    <div class="read-more">
+      <a href="/post/cicd-jenkins-install/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
+      <a class="post-link" href="/post/tools-zsh-cool-install/">Mac系统配置炫酷终端(oh my zsh)</a>
+    </h1>
+    
+    <div class="post-meta">
+      <time datetime="2018-11-10" class="post-time">
+        2018-11-10
+      </time>
+      <div class="post-category">
+          <a href="https://wnote.com/categories/tools/"> tools </a>
+          
+        </div>
+      <span class="more-meta"> 约 317 字 </span>
+      <span class="more-meta"> 预计阅读 1 分钟 </span>
+      
+      
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+    <div class="post-summary">
+      brew工具 官网:https://brew.sh 安装brew /usr/bin/ruby -e &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&quot; 修改brew源为国内源 git -C &quot;$(brew --repo)&quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git git -C &quot;$(brew --repo homebrew/core)&quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git git -C &quot;$(brew --repo homebrew/cask)&quot; remote set-url
+    </div>
+    <div class="read-more">
+      <a href="/post/tools-zsh-cool-install/" class="read-more-link">阅读全文</a>
+    </div>
+    
+  </div>
+</article>
+
+  
+    <article class="post bg-white">
+  <header class="post-header">
+    <h1 class="post-title">
+      
       <a class="post-link" href="/post/linux-git-commands-base/">Git日常命令总结</a>
     </h1>
     
@@ -363,222 +579,6 @@
 </article>
 
   
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/docker-dockerfile-details/">Dockerfile语法详情</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-06-21" class="post-time">
-        2018-06-21
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/linux/"> linux </a>
-          
-        </div>
-      <span class="more-meta"> 约 1452 字 </span>
-      <span class="more-meta"> 预计阅读 3 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      FROM 指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共
-    </div>
-    <div class="read-more">
-      <a href="/post/docker-dockerfile-details/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/docker-commands-base/">Docker基础命令</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-06-20" class="post-time">
-        2018-06-20
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/linux/"> linux </a>
-          
-        </div>
-      <span class="more-meta"> 约 687 字 </span>
-      <span class="more-meta"> 预计阅读 2 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      常用命令 docker info #查看本地docker信息 docker search openresty #搜索远程镜像仓库 docker images #查看当前系统镜像仓库镜像 docker ps #查看当前正在运行容器 docker pull centos #获取远程镜像，
-    </div>
-    <div class="read-more">
-      <a href="/post/docker-commands-base/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/linux-openssl-issue-private-certificate/">使用OpenSSL签发证书</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-05-25" class="post-time">
-        2018-05-25
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/tools/"> tools </a>
-          
-        </div>
-      <span class="more-meta"> 约 500 字 </span>
-      <span class="more-meta"> 预计阅读 1 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      生成客户端私钥: openssl genrsa -out server.key 2048 生成客户端证书： openssl req -new -sha256 -x509 -days 3650 -key server.key -out server.crt 证书申请文件： openssl req -new -key server.key -out server.csr 生成CA私钥 采用des3加密，需要输入4位以上密
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-openssl-issue-private-certificate/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/devops-saltstack-saltapi/">saltstack之saltapi</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-02-15" class="post-time">
-        2018-02-15
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/devops/"> devops </a>
-          
-        </div>
-      <span class="more-meta"> 约 132 字 </span>
-      <span class="more-meta"> 预计阅读 1 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      安装 yum -y install salt-api 配置 cat /etc/salt/master.d/api.conf #配置证书和端口 rest_cherrypy: port: 8888 debug: True ssl_crt: /etc/pki/tls/certs/localhost.crt ssl_key: /etc/pki/tls/private/localhost_nopass.key cat /etc/salt/master.d/eauth.conf #设置权限 external_auth: pam: saltapi: - .* - '@wheel' - '@runner' 添加账号 useradd -M -s /sbin/nologin saltapi echo &quot;saltapi_xxxxxx&quot; | passwd saltapi --stdin 启动服务 systemctl enable salt-api systemctl start salt-api 测试
-    </div>
-    <div class="read-more">
-      <a href="/post/devops-saltstack-saltapi/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/devops-saltstack-commands/">saltstack之salt命令大全</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-02-10" class="post-time">
-        2018-02-10
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/devops/"> devops </a>
-          
-        </div>
-      <span class="more-meta"> 约 1104 字 </span>
-      <span class="more-meta"> 预计阅读 3 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      常用命令 salt -N 'ceph' test.ping #测试连通性 salt -E '^server10*' test.ping #正则匹配连通性 salt -S 192.168.150.101 test.ping #根据agent ip地址匹配执行 salt -S 192.168.150.0/24 test.ping #根据agent ip地址匹配执行 salt -N 'ceph' cmd.run
-    </div>
-    <div class="read-more">
-      <a href="/post/devops-saltstack-commands/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
-    <article class="post bg-white">
-  <header class="post-header">
-    <h1 class="post-title">
-      
-      <a class="post-link" href="/post/python-coding-standards/">python编码规范</a>
-    </h1>
-    
-    <div class="post-meta">
-      <time datetime="2018-01-20" class="post-time">
-        2018-01-20
-      </time>
-      <div class="post-category">
-          <a href="https://wnote.com/categories/python/"> python </a>
-          
-        </div>
-      <span class="more-meta"> 约 1614 字 </span>
-      <span class="more-meta"> 预计阅读 4 分钟 </span>
-      
-      
-      
-    </div>
-  </header>
-  
-  <div class="post-content">
-    
-    <div class="post-summary">
-      编码声明 默认不设置为ASCII,可设置为 # coding=&lt;encoding name&gt; 或 #!/usr/bin/python # -*- coding: &lt;encoding name&gt; -*- 或 #!/usr/bin/python # coding: utf-8 代码编排 四个空格一个缩进，不建议使用tab，更不建议混合使用tab和
-    </div>
-    <div class="read-more">
-      <a href="/post/python-coding-standards/" class="read-more-link">阅读全文</a>
-    </div>
-    
-  </div>
-</article>
-
-  
 </section>
 
 
@@ -614,6 +614,10 @@
       
       <li  class="active" >
         <a href="/page/3/">3</a>
+      </li>
+      
+      <li >
+        <a href="/page/4/">4</a>
       </li>
       
     </ul>

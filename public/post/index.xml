@@ -6,10 +6,64 @@
     <description>Recent content in Posts on 丸子有记</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Fri, 07 May 2021 16:22:42 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 11 Sep 2021 17:22:42 +0800</lastBuildDate>
     
 	<atom:link href="https://wnote.com/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>制定kubernetes集群备份策略</title>
+      <link>https://wnote.com/post/kubernetes-velero-etcd-backup/</link>
+      <pubDate>Sat, 11 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-velero-etcd-backup/</guid>
+      <description>对于备份，每家互联网公司技术人员都要去做的一件事儿，当然我们也不例外，今天我主要针对生产环境kubernetes集群制定一些自己的策略，这里</description>
+    </item>
+    
+    <item>
+      <title>如何快速搭建一套Greenplum集群</title>
+      <link>https://wnote.com/post/greenplum-docker-compose-installtion/</link>
+      <pubDate>Wed, 08 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/greenplum-docker-compose-installtion/</guid>
+      <description>最近内部项目支持大数据项目，需要模拟客户场景配置Greenplum(老版本4.2.2.4)，因此这里记录下greenplum集群搭建过程,其</description>
+    </item>
+    
+    <item>
+      <title>阿里云共享GPU方案测试</title>
+      <link>https://wnote.com/post/kubernetes-gpushare-aliyun/</link>
+      <pubDate>Tue, 31 Aug 2021 14:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-gpushare-aliyun/</guid>
+      <description>一、k8s部署GPU共享插件 部署之前需要确保k8s节点上已安装nvidia-driver和nvidia-docker，同时已将docker默</description>
+    </item>
+    
+    <item>
+      <title>kubeadm部署高可用kubernetes集群</title>
+      <link>https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/</link>
+      <pubDate>Sun, 15 Aug 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-kubeadm-haproxy-keepalived-deploy/</guid>
+      <description>为了后便后期验证私有化部署 ，最近内网环境需要快速搭建一套k8s集群，由于之前对于规模比较大的集群，我一般采用kubeasz和kubespra</description>
+    </item>
+    
+    <item>
+      <title>阿里云PrivateZone&#43;Bind9&#43;Dnsmasq实现内部DNS</title>
+      <link>https://wnote.com/post/linux-dns-privatezone-bind9-dnsmasq/</link>
+      <pubDate>Sat, 10 Jul 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/linux-dns-privatezone-bind9-dnsmasq/</guid>
+      <description>需求： 阿里云集群能够解析内部域名 办公网解析内部域名+办公网上网解析 解决方法： 对于第一个问题，直接使用阿里云PrivateZone解析即可 对于</description>
+    </item>
+    
+    <item>
+      <title>Argo Events入门实践</title>
+      <link>https://wnote.com/post/cicd-argo-events-automate-task/</link>
+      <pubDate>Wed, 07 Jul 2021 16:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/cicd-argo-events-automate-task/</guid>
+      <description>前面我们介绍了Argo Workflow如何安装与触发任务，这一篇主要介绍一个新工具： ArgoEvents是什么？ Argo Events是一个事件驱动</description>
+    </item>
     
     <item>
       <title>Argo Worflow实践一安装部署</title>
@@ -135,60 +189,6 @@
       
       <guid>https://wnote.com/post/cicd-gitlab-k8s-gitlabrunner/</guid>
       <description>部署gitlab-runner 这里基于helm部署，参考：https://gitlab.com/gitlab-org/charts/gitl</description>
-    </item>
-    
-    <item>
-      <title>基于Docker-compose搭建jenkins</title>
-      <link>https://wnote.com/post/cicd-jenkins-install/</link>
-      <pubDate>Mon, 11 Nov 2019 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/cicd-jenkins-install/</guid>
-      <description>docker-compose配置 version: &#39;2&#39; services: jenkins: image: jenkins/jenkins:latest restart: always environment: JAVA_OPTS: &amp;quot;-Dorg.apache.commons.jelly.tags.fmt.timeZone=Asia/Shanghai -Djava.awt.headless=true -Dmail.smtp.starttls.enable=true&amp;quot; ports: - &amp;quot;80:8080&amp;quot; - &amp;quot;50000:50000&amp;quot; volumes: - &#39;/ssd/jenkins:/var/jenkins_home&#39; - &#39;/var/run/docker.sock:/var/run/docker.sock&#39; - &#39;/etc/localtime:/etc/localtime:ro&#39; dns: 223.5.5.5 networks: - extnetwork networks: extnetwork: ipam: config: - subnet: 172.255.0.0/16 启动服务 docker-compose up -d</description>
-    </item>
-    
-    <item>
-      <title>Mac系统配置炫酷终端(oh my zsh)</title>
-      <link>https://wnote.com/post/tools-zsh-cool-install/</link>
-      <pubDate>Sat, 10 Nov 2018 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/tools-zsh-cool-install/</guid>
-      <description>brew工具 官网:https://brew.sh 安装brew /usr/bin/ruby -e &amp;quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&amp;quot; 修改brew源为国内源 git -C &amp;quot;$(brew --repo)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git git -C &amp;quot;$(brew --repo homebrew/core)&amp;quot; remote set-url origin https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git git -C &amp;quot;$(brew --repo homebrew/cask)&amp;quot; remote set-url</description>
-    </item>
-    
-    <item>
-      <title>Git日常命令总结</title>
-      <link>https://wnote.com/post/linux-git-commands-base/</link>
-      <pubDate>Sat, 28 Jul 2018 17:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/linux-git-commands-base/</guid>
-      <description>Git全局设置： git config --global user.name &amp;quot;wanzi&amp;quot; git config --global user.email &amp;quot;iwz2099@163.com&amp;quot; Git提交代码 git clone git@github.com:iwz2099/test.git cd test touch README.md git add README.md git commit -m &amp;quot;add README&amp;quot; git push -u origin master #上面命令将本地的master分支推送到远程ori</description>
-    </item>
-    
-    <item>
-      <title>Dockerfile多阶段构建</title>
-      <link>https://wnote.com/post/docker-dockerfile-multi-stage/</link>
-      <pubDate>Mon, 02 Jul 2018 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/docker-dockerfile-multi-stage/</guid>
-      <description>Docker多阶段构建理解: 构建镜像需要有一个基础镜像,后续操作就会基于该基础镜像构建 docker镜像文件里有层级概念,每执行一次RUN指令</description>
-    </item>
-    
-    <item>
-      <title>Dockerfile语法详情</title>
-      <link>https://wnote.com/post/docker-dockerfile-details/</link>
-      <pubDate>Thu, 21 Jun 2018 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/docker-dockerfile-details/</guid>
-      <description>FROM 指定构建镜像使用的基础镜像,FROM必须是Dockerfile中非注释行的第一个指令,如果本地没有指定的镜像，则会自动从Docker的公共</description>
-    </item>
-    
-    <item>
-      <title>Docker基础命令</title>
-      <link>https://wnote.com/post/docker-commands-base/</link>
-      <pubDate>Wed, 20 Jun 2018 16:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/docker-commands-base/</guid>
-      <description>常用命令 docker info #查看本地docker信息 docker search openresty #搜索远程镜像仓库 docker images #查看当前系统镜像仓库镜像 docker ps #查看当前正在运行容器 docker pull centos #获取远程镜像，</description>
     </item>
     
   </channel>
