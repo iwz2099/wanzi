@@ -9,42 +9,112 @@
   </url>
   
   <url>
+    <loc>https://wnote.com/tags/aliyun/</loc>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://wnote.com/categories/</loc>
-    <lastmod>2021-09-11T17:22:42+08:00</lastmod>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/ingress/</loc>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://wnote.com/tags/k8s/</loc>
-    <lastmod>2021-09-11T17:22:42+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://wnote.com/tags/keepalived/</loc>
-    <lastmod>2021-09-11T17:22:42+08:00</lastmod>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://wnote.com/categories/kubernetes/</loc>
-    <lastmod>2021-09-11T17:22:42+08:00</lastmod>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/nginx/</loc>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://wnote.com/post/</loc>
-    <lastmod>2021-09-11T17:22:42+08:00</lastmod>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://wnote.com/tags/</loc>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-nginx-ingress-504/</loc>
+    <lastmod>2021-11-08T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/slb/</loc>
+    <lastmod>2021-10-21T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/kubernetes-aliyun-ingress-slb-intranet/</loc>
+    <lastmod>2021-10-21T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/alertmanager/</loc>
+    <lastmod>2021-09-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/prometheus/</loc>
+    <lastmod>2021-09-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/prometheusalert/</loc>
+    <lastmod>2021-09-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/post/prometheus-prometheusalert-alertmanager/</loc>
+    <lastmod>2021-09-18T17:22:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://wnote.com/tags/keepalived/</loc>
     <lastmod>2021-09-11T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -95,13 +165,6 @@
   <url>
     <loc>https://wnote.com/post/greenplum-docker-compose-installtion/</loc>
     <lastmod>2021-09-08T17:22:42+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://wnote.com/tags/aliyun/</loc>
-    <lastmod>2021-08-31T14:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -402,13 +465,6 @@
   
   <url>
     <loc>https://wnote.com/post/kubernetes-add-user/</loc>
-    <lastmod>2019-12-31T17:22:42+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://wnote.com/tags/ingress/</loc>
     <lastmod>2019-12-31T17:22:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

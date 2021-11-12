@@ -38,6 +38,274 @@
     </item>
     
     <item>
+      <title>解决k8s下nginx文件上传限制和504网关超时</title>
+      <link>https://wnote.com/post/kubernetes-nginx-ingress-504/</link>
+      <pubDate>Mon, 08 Nov 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-nginx-ingress-504/</guid>
+      
+        <description>&lt;p&gt;最近业务使用k8s集群经常有两个问题需要解决，这里记录一下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;前端页面上传文件1M限制&lt;/li&gt;
+&lt;li&gt;前端页面发送POST请求到后端，出现504超时&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;第一个问题主要解决方法：nginx默认上传大小为1M，nginx配置文件http,server, location区域增加如下内容：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;client_max_body_size 800M;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;第二个问题主要解决方法：nginx默认读取后端超时时间为1分钟，nginx配置文件http,server, location区域增加如下内容：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;proxy_connect_timeout 120;
+proxy_read_timeout  900;
+proxy_send_timeout 900;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最终，nginx配置如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;server {
+    listen 80;
+    server_name web_server;
+    location / {
+        root /usr/share/nginx/html/;
+        index index.htm index.html;
+        try_files $uri $uri/ /index.html;
+    }
+    location /business-operation {
+        proxy_pass http://business-operat.common:5000;
+        
+        proxy_ignore_client_abort on; 
+        keepalive_timeout 900s;
+        client_body_timeout 900s;
+        proxy_connect_timeout 120s;
+        proxy_read_timeout  900s;
+        proxy_send_timeout 900s;
+        client_max_body_size 800m;
+        proxy_pass_header Authorization;
+        proxy_pass_header WWW-Authenticate;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最后，以上nginx配置调整以后，还需要在创建ingress的时候，注解里带上这些信息：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: &amp;quot;800M&amp;quot;
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: &#39;120&#39;
+    nginx.ingress.kubernetes.io/proxy-read-timeout: &#39;900&#39;
+    nginx.ingress.kubernetes.io/proxy-send-timeout: &#39;900&#39;
+  name: enterprise-mark
+  namespace: frontend
+spec:
+  rules:
+    - host: enterprise-marketing.xxxx.com
+      http:
+        paths:
+          - backend:
+              serviceName: enterprise-mark
+              servicePort: 80
+            path: /
+status:
+  loadBalancer:
+    ingress:
+      - ip: 39.107.xxx.xxx
+&lt;/code&gt;&lt;/pre&gt;</description>
+      
+    </item>
+    
+    <item>
+      <title>阿里云ACK同时支持公网和内网SLB</title>
+      <link>https://wnote.com/post/kubernetes-aliyun-ingress-slb-intranet/</link>
+      <pubDate>Thu, 21 Oct 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/kubernetes-aliyun-ingress-slb-intranet/</guid>
+      
+        <description>&lt;h2 id=&#34;一背景&#34;&gt;一、背景&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;有一套ACK集群&lt;/li&gt;
+&lt;li&gt;成功部署Nginx ingress controller并绑定了公网SLB&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;注意：通过阿里云容器服务管理控制台创建的Kubernetes集群在初始化时会自动部署一套Nginx Ingress Controller，默认其挂载在公网SLB实例上.&lt;/p&gt;
+&lt;h2 id=&#34;三配置&#34;&gt;三、配置&lt;/h2&gt;
+&lt;h3 id=&#34;1创建内网lb&#34;&gt;1、创建内网LB&lt;/h3&gt;
+&lt;p&gt;阿里云控制台，创建内网SLB并绑定VPC&lt;/p&gt;
+&lt;h3 id=&#34;2配置nginx-ingress-controller&#34;&gt;2、配置Nginx ingress controller&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# my-nginx-ingress-slb-intranet.yaml
+# intranet nginx ingress slb service
+apiVersion: v1
+kind: Service
+metadata:
+  # 这里服务取名为nginx-ingress-lb-intranet。
+  name: nginx-ingress-lb-intranet
+  namespace: kube-system
+  labels:
+    app: nginx-ingress-lb-intranet
+  annotations:
+    # 指明SLB实例地址类型为私网类型。
+    service.beta.kubernetes.io/alicloud-loadbalancer-address-type: intranet
+    # 修改为您的私网SLB实例ID。
+    service.beta.kubernetes.io/alicloud-loadbalancer-id: &amp;lt;YOUR_INTRANET_SLB_ID&amp;gt;
+    # 是否自动创建SLB端口监听（会覆写已有端口监听），也可手动创建端口监听。
+    #service.beta.kubernetes.io/alicloud-loadbalancer-force-override-listeners: &#39;false&#39;
+spec:
+  type: LoadBalancer
+  # route traffic to other nodes
+  externalTrafficPolicy: &amp;quot;Cluster&amp;quot;
+  ports:
+  - port: 80
+    name: http
+    targetPort: 80
+  - port: 443
+    name: https
+    targetPort: 443
+  selector:
+    # select app=ingress-nginx pods
+    app: ingress-nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建service资源：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubectl apply -f my-nginx-ingress-slb-intranet.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;获取service资源：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# kubectl -n kube-system get svc | grep nginx-ingress-lb
+nginx-ingress-lb            LoadBalancer   172.21.15.148   39.107.xxx.xxx   80:32076/TCP,443:30803/TCP     433d
+nginx-ingress-lb-intranet   LoadBalancer   172.21.5.0      172.17.193.181   80:32282/TCP,443:30507/TCP     1d
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;通过Ingress对外暴露服务时，即可以通过公网SLB来访问该服务，同一个VPC下的其他服务也可以直接通过私网SLB来访问该服务。&lt;/p&gt;
+&lt;p&gt;3、创建ingress服务
+配置完ingress controller，ingress创建无须特殊配置，和以前创建ingress一摸一样，如下例子：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Source: prometheusalert/templates/ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: RELEASE-NAME-prometheusalert
+  labels:
+    app.kubernetes.io/name: prometheusalert
+    helm.sh/chart: prometheusalert-1.0.0
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: &amp;quot;1.2.0&amp;quot;
+    app.kubernetes.io/managed-by: Helm
+spec:
+  rules:
+    - host: &amp;quot;palert.con.sdi&amp;quot;
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: RELEASE-NAME-prometheusalert
+              servicePort: 8080
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;对于内网域名直接解析到内网SLB地址（这里172.17.193.181）即可。&lt;/p&gt;
+&lt;p&gt;参考：&lt;a href=&#34;https://help.aliyun.com/document_detail/151506.htm&#34;&gt;阿里云文档&lt;/a&gt;&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
+      <title>利用Prometheusalert打造Prometheus告警消息聚合</title>
+      <link>https://wnote.com/post/prometheus-prometheusalert-alertmanager/</link>
+      <pubDate>Sat, 18 Sep 2021 17:22:42 +0800</pubDate>
+      
+      <guid>https://wnote.com/post/prometheus-prometheusalert-alertmanager/</guid>
+      
+        <description>&lt;h2 id=&#34;部署prometheusalert&#34;&gt;部署prometheusalert&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/feiyu563/PrometheusAlert.git
+cd PrometheusAlert/example/helm/prometheusalert
+#更新config/app.conf设置登陆用户信息，并配置数据库信息
+helm install -n monitoring .
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;创建企业微信群机器人&#34;&gt;创建企业微信群机器人&lt;/h2&gt;
+&lt;p&gt;企业微信群以后，点击企业微信群，右键“添加群机器人”，创建群机器人会得到一个机器人的webhook地址，记录该地址备用。&lt;/p&gt;
+&lt;h2 id=&#34;prometheus接入配置&#34;&gt;Prometheus接入配置&lt;/h2&gt;
+&lt;h3 id=&#34;配置alertmanager&#34;&gt;配置alertmanager&lt;/h3&gt;
+&lt;p&gt;由于我这里prometheus采用https://github.com/prometheus-operator/kube-prometheus.git
+这里直接修改alertmanager-secret.yaml配置文件即可，将上面的webhook配置在receivers里即可：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+data: {}
+kind: Secret
+type: Opaque
+metadata:
+  name: alertmanager-main
+  namespace: monitoring
+stringData:
+  alertmanager.yaml: |-
+    global:
+      resolve_timeout: &amp;quot;5m&amp;quot;
+      #email
+      smtp_smarthost: &#39;smtp.exmail.qq.com:465&#39;                   # 邮箱smtp服务器代理
+      smtp_from: &#39;devops_alert@xxx.com&#39;                       # 发送邮箱名称
+      smtp_auth_username: &#39;devops_alert@xxx.com&#39;              # 邮箱名称
+      smtp_auth_password: &#39;1DevSop#&#39;                             # 授权密码
+      smtp_require_tls: false 		  		 # 不开启tls 默认开启
+    inhibit_rules:
+    - equal:
+      - namespace
+      - alertname
+      - instance
+      source_match:
+        severity: critical
+      target_match_re:
+        severity: warning|info
+    - equal:
+      - namespace
+      - alertname
+      - instance
+      source_match:
+        severity: warning
+      target_match_re:
+        severity: info
+        receivers:
+    - name: default
+      email_configs:            # 邮箱配置
+      - to: &amp;quot;xxxx@163.com&amp;quot;   # 接收警报的email配置
+    - name: jf-k8s-node
+      webhook_configs:
+      - url: &amp;quot;http://palert.con.sdi/prometheusalert?type=wx&amp;amp;tpl=jf-k8s-node&amp;amp;wxurl=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=0da1f944-9a4e-4221-8036-f322351f7bd8&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置prometheus-rules&#34;&gt;配置Prometheus rules&lt;/h3&gt;
+&lt;p&gt;这里举例磁盘告警规则&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: external-node.rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: k8s-node.rules
+    rules:
+    - alert: 磁盘容量
+      expr: 100-(node_filesystem_avail_bytes{instance=~&#39;39.100.*&#39;,fstype=~&amp;quot;ext4|xfs|fuse.glusterfs&amp;quot;}/node_filesystem_size_bytes {fstype=~&amp;quot;ext4|xfs|fuse.glusterfs&amp;quot;}*100) &amp;gt; 96
+      for: 1m
+      labels:
+        severity: critical
+        app: node-alert
+      annotations:
+        summary: &amp;quot;{{$labels.mountpoint}} 磁盘分区使用率过高！&amp;quot;
+        description: &amp;quot;{{$labels.mountpoint }} 磁盘分区使用大于90%(目前使用:{{$value}}%)&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;定制消息模版&#34;&gt;定制消息模版&lt;/h2&gt;
+&lt;p&gt;对于以上报警规则，默认情况下alertmanger有自己的告警消息模版不是很好用，这里我们统一使用prometheusalert的告警模版进行配置。&lt;/p&gt;
+&lt;p&gt;根据官方文档，我们新建模版，并指定模版类型为企业微信，模版用途Prometheus，模版内容如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{{ $var := .externalURL}}{{ range $k,$v:=.alerts }}
+{{if eq $v.status &amp;quot;resolved&amp;quot;}}
+#### [Prometheus恢复信息]({{$v.generatorURL}})
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警名称&amp;lt;/font&amp;gt;：[{{$v.labels.alertname}}]({{$var}})
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警级别&amp;lt;/font&amp;gt;：{{$v.labels.severity}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;触发时间&amp;lt;/font&amp;gt;：{{GetCSTtime $v.startsAt}}
+##### &amp;lt;font color=&amp;quot;#02b340&amp;quot;&amp;gt;恢复时间&amp;lt;/font&amp;gt;：{{GetCSTtime $v.endsAt}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;故障实例&amp;lt;/font&amp;gt;：{{$v.labels.instance}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警详情&amp;lt;/font&amp;gt;：{{$v.annotations.description}}
+{{else}}
+#### [Prometheus告警信息]({{$v.generatorURL}})
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警名称&amp;lt;/font&amp;gt;：[{{$v.labels.alertname}}]({{$var}})
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警级别&amp;lt;/font&amp;gt;：{{$v.labels.severity}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;触发时间&amp;lt;/font&amp;gt;：{{GetCSTtime $v.startsAt}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;故障实例&amp;lt;/font&amp;gt;：{{$v.labels.instance}}
+##### &amp;lt;font color=&amp;quot;#FF0000&amp;quot;&amp;gt;告警详情&amp;lt;/font&amp;gt;：{{$v.annotations.description}}
+{{end}}
+{{ end }}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;当磁盘空间告警以后，实际效果如下：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2021/prometheusalert-1.png&#34; alt=&#34;terraform操作流程图&#34;&gt;&lt;/p&gt;
+&lt;p&gt;至此，用prometheusalert接受Prometheus告警消息，转发给企业微信群机器人配置完毕。&lt;/p&gt;
+&lt;p&gt;另外，对于多集群多消息源，prometheusalert的强大就体现出来了。&lt;/p&gt;
+</description>
+      
+    </item>
+    
+    <item>
       <title>制定kubernetes集群备份策略</title>
       <link>https://wnote.com/post/kubernetes-velero-etcd-backup/</link>
       <pubDate>Sat, 11 Sep 2021 17:22:42 +0800</pubDate>
@@ -3444,775 +3712,6 @@ git  add -A
 git commit -m &amp;quot;initialization&amp;quot;
 git push -u origin master
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如果使用个人域名,只需要在github仓库下创建CNAME文件写入自己的域名即可，这样访问wnote.com就可以访问自己博客了。&lt;/p&gt;
-</description>
-      
-    </item>
-    
-    <item>
-      <title>kubernetes集群添加用户</title>
-      <link>https://wnote.com/post/kubernetes-add-user/</link>
-      <pubDate>Tue, 31 Dec 2019 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/kubernetes-add-user/</guid>
-      
-        <description>&lt;p&gt;之前通过ansible搭建了kubernetes集群环境,这里需求主要是添加一个用户进行日常管理，并限制到指定的namespace，接下来进行操作：&lt;/p&gt;
-&lt;h1 id=&#34;kubernetes中用户&#34;&gt;kubernetes中用户&lt;/h1&gt;
-&lt;blockquote&gt;
-&lt;p&gt;K8S中有两种用户(User)——服务账号(ServiceAccount)和普通意义上的用户(User), ServiceAccount是由K8S管理的，而User通常是在外部管理，K8S不存储用户列表——也就是说，添加/编辑/删除用户都是在外部进行，无需与K8S API交互，虽然K8S并不管理用户，但是在K8S接收API请求时，是可以认知到发出请求的用户的，实际上，所有对K8S的API请求都需要绑定身份信息(User或者ServiceAccount)，这意味着，可以为User配置K8S集群中的请求权限&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;对于kubernetes接受用户请求的时候通常采取客户端证书、静态token文件、静态密码文件三种方式，这里我们只介绍证书验证。&lt;/p&gt;
-&lt;h1 id=&#34;生成用户证书&#34;&gt;生成用户证书&lt;/h1&gt;
-&lt;p&gt;准备证书生成文件csr,通过kubernetes的ca签发证书,通常k8s api server的ca文件路径为/etc/kubernetes/pki/,这里会生成cicd-admin-key.pem(私钥)和cicd-admin.pem(证书), 具体csr如何生成可以参考：https://wnote.com/post/linux-openssl-issue-private-certificate/&lt;/p&gt;
-&lt;p&gt;这里的csr文件传递的用户名为cicd-admin&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# vim cicd-admin-csr.json
-{
-  &amp;quot;CN&amp;quot;: &amp;quot;cicd-admin&amp;quot;,
-  &amp;quot;hosts&amp;quot;: [],
-  &amp;quot;key&amp;quot;: {
-    &amp;quot;algo&amp;quot;: &amp;quot;rsa&amp;quot;,
-    &amp;quot;size&amp;quot;: 2048
-  },
-  &amp;quot;names&amp;quot;: [
-    {
-      &amp;quot;C&amp;quot;: &amp;quot;CN&amp;quot;,
-      &amp;quot;ST&amp;quot;: &amp;quot;BeiJing&amp;quot;,
-      &amp;quot;L&amp;quot;: &amp;quot;BeiJing&amp;quot;,
-      &amp;quot;O&amp;quot;: &amp;quot;k8s&amp;quot;,
-      &amp;quot;OU&amp;quot;: &amp;quot;System&amp;quot;
-    }
-  ]
-}
-# cd /etc/kubernetes/pki/ 
-# cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes  cicd-admin-csr.json | cfssljson -bare cicd-admin
-# ls -l cicd-admin*
--rw-r--r-- 1 root root 1001 Dec 19 16:51 cicd-admin.csr
--rw-r--r-- 1 root root  224 Dec 19 16:50 cicd-admin-csr.json
--rw------- 1 root root 1675 Dec 19 16:51 cicd-admin-key.pem
--rw-r--r-- 1 root root 1387 Dec 19 16:51 cicd-admin.pem
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;用户权限控制rbac&#34;&gt;用户权限控制(RBAC)&lt;/h2&gt;
-&lt;h3 id=&#34;创建角色&#34;&gt;创建角色&lt;/h3&gt;
-&lt;p&gt;k8s中rbac的角色主要有两种,普通角色(Role)和集群角色(ClusterRole)，ClusterRole是特殊的Role&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Role属于某个命名空间; 而ClusterRole属于整个集群，包括所有的命名空间&lt;/li&gt;
-&lt;li&gt;ClusterRole能够授予集群范围的权限，比如node资源的管理，可以请求全命名空间的资源(通过指定&amp;ndash;all-namespaces), 默认情况下, K8S内置了一个名为admin的ClusterRole，实际使用中无需创建admin Role&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;在cicd的namespace下创建一个role为cicd-admin:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  namespace: cicd
-  name: cicd-admin
-rules:
-- apiGroups: [&amp;quot;&amp;quot;]
-  resources: [&amp;quot;*&amp;quot;]
-  verbs: [&amp;quot;*&amp;quot;]
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;绑定用户到指定角色&#34;&gt;绑定用户到指定角色&lt;/h3&gt;
-&lt;blockquote&gt;
-&lt;p&gt;subjects指定账户类型可以是User也可以是service account，这里指定的是用户cicd-admin, roleRef指定RoleBinding引用角色&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre&gt;&lt;code&gt;kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: cicd-admin-binding
-  namespace: cicd
-subjects:
-- kind: User
-  name: cicd-admin
-  apiGroup: &amp;quot;&amp;quot;
-roleRef:
-  kind: Role
-  name: admin
-  apiGroup: &amp;quot;&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者通过kubectl进行绑定也可以:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;kubectl create rolebinding cicd-admin-binding --role=admin --user=cicd-admin --namespace=cicd
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;或者给用户绑定到默认ClusterRole的admin角色,而这里cicd-admin如果绑定了admin，其权限也只会被限制在cicd的namespace&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: cicd-admin-binding
-  namespace: cicd
-subjects:
-- kind: User
-  name: cicd-admin
-  apiGroup: &amp;quot;&amp;quot;
-roleRef:
-  kind: ClusterRole
-  name: admin
-  apiGroup: &amp;quot;&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;客户端配置&#34;&gt;客户端配置&lt;/h2&gt;
-&lt;h3 id=&#34;设置集群参数&#34;&gt;设置集群参数&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;export KUBE_APISERVER=&amp;quot;https://cicd-k8s.test.cn:8443&amp;quot;
-kubectl config set-cluster kubernetes \
---certificate-authority=/etc/kubernetes/ssl/ca.pem \
---embed-certs=true \
---server=${KUBE_APISERVER} \
---kubeconfig=cicd-admin.kubeconfig
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置客户端认证参数&#34;&gt;设置客户端认证参数&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;kubectl config set-credentials cicd-admin \
---client-certificate=/etc/kubernetes/ssl/cicd-admin.pem \
---client-key=/etc/kubernetes/ssl/cicd-admin-key.pem \
---embed-certs=true \
---kubeconfig=cicd-admin.kubeconfig
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置上下文参数&#34;&gt;设置上下文参数&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;kubectl config set-context kubernetes \
---cluster=kubernetes \
---user=cicd-admin \
---namespace=cicd \
---kubeconfig=cicd-admin.kubeconfig
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;设置默认上下文&#34;&gt;设置默认上下文&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;kubectl config use-context kubernetes --kubeconfig=cicd-admin.kubeconfig
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;客户端使用&#34;&gt;客户端使用&lt;/h3&gt;
-&lt;p&gt;将kubeconfig文件覆盖~/.kube/config&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;cp cicd-admin.kubeconfig ~/.kube/config
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，kubernetes添加用户并进行授权访问k8s集群的介绍就告一段落。&lt;/p&gt;
-</description>
-      
-    </item>
-    
-    <item>
-      <title>kubernetes集群部署traefik2.1</title>
-      <link>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</link>
-      <pubDate>Tue, 17 Dec 2019 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/kubernetes-traefik-v2.1-deploy/</guid>
-      
-        <description>&lt;h2 id=&#34;架构概念&#34;&gt;架构&amp;amp;概念&lt;/h2&gt;
-&lt;p&gt;&lt;img src=&#34;https://wnote.com/images/2019/routers.png&#34; alt=&#34;traefik v2.1 router&#34;&gt;&lt;/p&gt;
-&lt;p&gt;Traefik2.x版本相比1.7.x架构有很大变化，正如上边这张架构图，最主要的功能是支持了TCP协议、增加了Router概念。&lt;/p&gt;
-&lt;p&gt;这里我们采用在kubernetes集群部署Traefik2.1，业务访问通过haproxy请求到traefik Ingress，下边是搭建过程涉及到一些概念：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;EntryPoints：Traefik的网络入口，定义请求接受的端口(不分http或tcp)&lt;/li&gt;
-&lt;li&gt;CRD：Kubernetes API的扩展&lt;/li&gt;
-&lt;li&gt;IngressRouter：将传入请求转发到可以处理请求的服务，另外转发请求之前可以通过Middlewares动态更新请求&lt;/li&gt;
-&lt;li&gt;Middlewares：请求到达服务之前进行动态处理请求参数，比如header或转发规则等等。&lt;/li&gt;
-&lt;li&gt;TraefikService：如果果CRD定义了了这种类型，IngressRouter可以直接引用，处在IngressRouter和服务之间,类似于Maesh架构，更适合较为复杂场景,一般情况可以不使用。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;kubernetes配置&#34;&gt;kubernetes配置&lt;/h2&gt;
-&lt;h3 id=&#34;配置ssl证书&#34;&gt;配置SSL证书&lt;/h3&gt;
-&lt;p&gt;因为业务服务使用https,这里先配置下SSL证书:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;kubectl -n cattle-system create secret tls tls-rancher-ingress --cert=test.cn.pem  --key=test.cn.key
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置集群访问控制rbac&#34;&gt;配置集群访问控制(RBAC)&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: traefik-ingress-controller
-  namespace: kube-system
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: traefik-ingress-controller
-
-rules:
-  - apiGroups:
-      - &amp;quot;&amp;quot;
-    resources:
-      - services
-      - endpoints
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-    resources:
-      - ingresses/status
-    verbs:
-      - update
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - middlewares
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - ingressroutes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - ingressroutetcps
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - tlsoptions
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - traefikservices
-    verbs:
-      - get
-      - list
-      - watch
-
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: traefik-ingress-controller
-
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: traefik-ingress-controller
-subjects:
-  - kind: ServiceAccount
-    name: traefik-ingress-controller
-    namespace: kube-system
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;tls参数配置&#34;&gt;TLS参数配置&lt;/h3&gt;
-&lt;p&gt;默认配置TLS1.2,当然也可以使用TLS1.3&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
-kind: TLSOption
-metadata:
-  name: mytlsoption
-  namespace: kube-system
-
-spec:
-  minversion: VersionTLS12
-  snistrict: true
-  ciphersuites:
-    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-    - TLS_RSA_WITH_AES_256_GCM_SHA384
-    - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
-    - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;crd配置&#34;&gt;CRD配置&lt;/h2&gt;
-&lt;p&gt;这里定义了IngressRoute、Middleware、TLSOption、IngressRouteTCP、TraefikService,其中TraefikService是在2.1版本新增加的CRD&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: ingressroutes.traefik.containo.us
-
-spec:
-  group: traefik.containo.us
-  version: v1alpha1
-  names:
-    kind: IngressRoute
-    plural: ingressroutes
-    singular: ingressroute
-  scope: Namespaced
-
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: middlewares.traefik.containo.us
-spec:
-  group: traefik.containo.us
-  version: v1alpha1
-  names:
-    kind: Middleware
-    plural: middlewares
-    singular: middleware
-  scope: Namespaced
-
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: tlsoptions.traefik.containo.us
-
-spec:
-  group: traefik.containo.us
-  version: v1alpha1
-  names:
-    kind: TLSOption
-    plural: tlsoptions
-    singular: tlsoption
-  scope: Namespaced
-
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: ingressroutetcps.traefik.containo.us
-
-spec:
-  group: traefik.containo.us
-  version: v1alpha1
-  names:
-    kind: IngressRouteTCP
-    plural: ingressroutetcps
-    singular: ingressroutetcp
-  scope: Namespaced
-
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: traefikservices.traefik.containo.us
-
-spec:
-  group: traefik.containo.us
-  version: v1alpha1
-  names:
-    kind: TraefikService
-    plural: traefikservices
-    singular: traefikservice
-  scope: Namespaced
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;traefikservice配置&#34;&gt;TraefikService配置&lt;/h2&gt;
-&lt;p&gt;TraefikService有点类似Maesh解决服务之间的调用逻辑，只是Maesh依赖coredns；另外traefik service还可以设置后端服务权重，配置服务的流量镜像。&lt;/p&gt;
-&lt;p&gt;这里我们配置traefik dashboard和rancher的traefikservice类型服务，其他服务配置可以参考这里rancher的traefik service, traefik service会转发请求到kubernetes 的服务类型(上一章节我们已经通过helm3创建了rancher服务)，这里只是举例说明：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
-kind: TraefikService
-metadata:
-  name: traefik-webui-traefikservice
-  namespace: kube-system
-
-spec:
-  weighted:
-    services:
-      - name: traefik-ingress-service
-        weight: 1
-        port: 8080
-
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: TraefikService
-metadata:t
-  name: rancher-traefikservice
-  namespace: cattle-system
-
-spec:
-  weighted:
-    services:
-      - name: rancher
-        weight: 1
-        port: 80
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;deployment配置&#34;&gt;Deployment配置&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;配置k8s标准service服务&lt;/li&gt;
-&lt;li&gt;创建traefik configmap,并配置entrypoints和默认SSL证书&lt;/li&gt;
-&lt;li&gt;Deployment方式部署traefik ingress controller&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;kind: Service
-apiVersion: v1
-metadata:
-  name: traefik-ingress-service
-  namespace: kube-system
-spec:
-  selector:
-    k8s-app: traefik-ingress-lb
-  ports:
-    - protocol: TCP
-      port: 80
-      nodePort: 23456
-      name: http
-    - protocol: TCP
-      port: 443
-      nodePort: 23457
-      name: https
-  type: NodePort
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: traefik-conf
-  namespace: kube-system
-data:
-  traefik.toml: |
-    [global]
-      checkNewVersion = false
-      sendAnonymousUsage = false
-    [log]
-      level = &amp;quot;DEBUG&amp;quot;
-    [api]
-      dashboard = true
-    [metrics.prometheus]
-      buckets = [0.1,0.3,1.2,5.0]
-      entryPoint = &amp;quot;metrics&amp;quot;
-    [entryPoints]
-      [entryPoints.http]
-        address = &amp;quot;:80&amp;quot;
-      [entryPoints.https]
-        address = &amp;quot;:443&amp;quot;
-    [tls.stores]
-      [tls.stores.default]
-        [tls.stores.default.defaultCertificate]
-          certFile = &amp;quot;/config/tls/test.cn.crt&amp;quot;
-          keyFile  = &amp;quot;/config/tls/test.cn.key&amp;quot;
----
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: traefik
-  namespace: kube-system
-  labels:
-    k8s-app: traefik-ingress-lb
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      k8s-app: traefik-ingress-lb
-  template:
-    metadata:
-      labels:
-        k8s-app: traefik-ingress-lb
-        name: traefik-ingress-lb
-    spec:
-      serviceAccountName: traefik-ingress-controller
-      terminationGracePeriodSeconds: 60
-      nodeSelector:
-        node-role.kubernetes.io/traefik: &amp;quot;true&amp;quot;
-      volumes:
-      - name: ssl
-        secret:
-          secretName: traefik-cert
-      - name: config
-        configMap:
-          name: traefik-conf
-      containers:
-      - image: traefik:v2.1.1
-        name: traefik-ingress-lb
-        volumeMounts:
-        - mountPath: &amp;quot;/config&amp;quot;
-          name: &amp;quot;config&amp;quot;
-        - mountPath: &amp;quot;/config/tls&amp;quot;
-          name: &amp;quot;ssl&amp;quot;
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 800Mi
-          requests:
-            cpu: 500m
-            memory: 600Mi
-        ports:
-        - name: http
-          containerPort: 80
-          hostPort: 80
-        - name: https
-          containerPort: 443
-          hostPort: 443
-        args:
-        - --entrypoints.http.Address=:80
-        - --entrypoints.https.Address=:443
-        - --api
-        - --accesslog
-        - --providers.file.directory=/config/
-        - --providers.file.watch=true
-        - --ping=true
-        - --providers.kubernetescrd
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;ingressrouter配置&#34;&gt;IngressRouter配置&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;定义middleware给rancher服务配置X-Forwarded-Proto的头信息&lt;/li&gt;
-&lt;li&gt;配置rancher的ingressroute，并使用默认证书&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: redirect-https
-  namespace: kube-system
-spec:
-  redirectScheme:
-    scheme: https
-
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: http-default-router
-  namespace: kube-system
-spec:
-  entryPoints:
-    - http
-  routes:
-  - match: HostRegexp(`{host:.+}`)
-    kind: Rule
-    services:
-    - name: traefik-ingress-service
-      kind: Service
-      namespaces: kube-system
-      port: 80
-    middlewares:
-    - name: redirect-https
-  tls:
-    options:
-      name: mytlsoption
-      namespaces: kube-system
-    certResolver: default
-
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: traefik-webui
-  namespace: kube-system
-spec:
-  entryPoints:
-    - https
-  routes:
-  - match: Host(`traefik.test.cn`)
-    kind: Rule
-    services:
-    - name: api@internal
-      kind: TraefikService
-      namespaces: kube-system
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;配置rancher的ingressroute&#34;&gt;配置Rancher的IngressRoute&lt;/h2&gt;
-&lt;p&gt;由于我这里使用rancher管理集群，实际环境可以根据你自己需求配置&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;定义middleware给rancher服务配置X-Forwarded-Proto的头信息&lt;/li&gt;
-&lt;li&gt;配置rancher的ingressroute，并使用默认证书&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: rancher-https-headers
-  namespace: cattle-system
-spec:
-  headers:
-    customRequestHeaders:
-      X-Forwarded-Proto: &amp;quot;https&amp;quot;
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: rancher-tls
-  namespace: cattle-system
-spec:
-  entryPoints:
-  - https
-  routes:
-  - match: Host(`rancher.test.cn`)
-    kind: Rule
-    services:
-    - name: rancher
-      kind: Service
-      namespaces: cattle-system
-      port: 80
-    middlewares:
-    - name: rancher-https-headers
-      namespaces: cattle-system
-
-  tls:
-    certResolver: default
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;统一部署traefik21&#34;&gt;统一部署traefik2.1&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;kubectl apply -f 01-crd.yaml
-kubectl apply -f 02-rbac.yaml
-kubectl apply -f 03-tlsoption.yaml
-kubectl apply -f 04-traefikservices.yaml #非必须
-kubectl apply -f 05-traefik.yaml
-kubectl apply -f 06-ingressrouter.yaml
-kubectl apply -f 06-ingressrouter-rancher.yaml
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;更多配置信息，请移步我的github仓库：https://github.com/iwz2099/kubecase/tree/master/traefik/v2&lt;/p&gt;
-</description>
-      
-    </item>
-    
-    <item>
-      <title>kubeasz部署k8s集群</title>
-      <link>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</link>
-      <pubDate>Thu, 12 Dec 2019 10:22:42 +0800</pubDate>
-      
-      <guid>https://wnote.com/post/kubernetes-kubeasz-deploy-automation/</guid>
-      
-        <description>&lt;h2 id=&#34;环境准备&#34;&gt;环境准备&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Master节点&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;172.16.244.14
-172.16.244.16
-172.16.244.18
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;Node节点&lt;/li&gt;
-&lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;172.16.244.25
-172.16.244.27
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;Master节点VIP地址: 172.16.243.13&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;部署工具:Ansible/kubeasz&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;初始化环境&#34;&gt;初始化环境&lt;/h2&gt;
-&lt;h3 id=&#34;安装ansible&#34;&gt;安装Ansible&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;apt update
-apt-get install ansible expect
-git clone https://github.com/easzlab/kubeasz
-cd kubeasz
-cp * /etc/ansible/
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置ansible免密登录&#34;&gt;配置ansible免密登录&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -b 2048 #生成密钥
-./tools/yc-ssh-key-copy.sh  hosts root &#39;rootpassword&#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;准备二进制文件&#34;&gt;准备二进制文件&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;cd tools
-./easzup -D #默认情况都会下载到/etc/ansible/bin/目录下
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配置hosts文件如下&#34;&gt;配置hosts文件如下:&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;[kube-master]
-172.16.244.14
-172.16.244.16
-172.16.244.18
-
-[etcd]
-172.16.244.14 NODE_NAME=etcd1
-172.16.244.16 NODE_NAME=etcd2
-172.16.244.18 NODE_NAME=etcd3
-
-#haproxy-keepalived
-[haproxy]
-172.16.244.14
-172.16.244.16
-172.16.244.18
-
-[kube-node]
-172.16.244.25
-172.16.244.27
-
-
-# [optional] loadbalance for accessing k8s from outside
-[ex-lb]
-172.16.244.14 LB_ROLE=backup EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
-172.16.244.16 LB_ROLE=backup EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
-172.16.244.18 LB_ROLE=master EX_APISERVER_VIP=172.16.243.13 EX_APISERVER_PORT=8443
-
-# [optional] ntp server for the cluster
-[chrony]
-172.16.244.18
-
-[all:vars]
-# --------- Main Variables ---------------
-# Cluster container-runtime supported: docker, containerd
-CONTAINER_RUNTIME=&amp;quot;docker&amp;quot;
-
-# Network plugins supported: calico, flannel, kube-router, cilium, kube-ovn
-#CLUSTER_NETWORK=&amp;quot;flannel&amp;quot;
-CLUSTER_NETWORK=&amp;quot;calico&amp;quot;
-
-# Service proxy mode of kube-proxy: &#39;iptables&#39; or &#39;ipvs&#39;
-PROXY_MODE=&amp;quot;ipvs&amp;quot;
-
-# K8S Service CIDR, not overlap with node(host) networking
-SERVICE_CIDR=&amp;quot;10.68.0.0/16&amp;quot;
-
-# Cluster CIDR (Pod CIDR), not overlap with node(host) networking
-CLUSTER_CIDR=&amp;quot;10.101.0.0/16&amp;quot;
-
-# NodePort Range
-NODE_PORT_RANGE=&amp;quot;20000-40000&amp;quot;
-
-# Cluster DNS Domain
-CLUSTER_DNS_DOMAIN=&amp;quot;cluster.local.&amp;quot;
-
-# -------- Additional Variables (don&#39;t change the default value right now) ---
-# Binaries Directory
-bin_dir=&amp;quot;/opt/kube/bin&amp;quot;
-
-# CA and other components cert/key Directory
-ca_dir=&amp;quot;/etc/kubernetes/ssl&amp;quot;
-
-# Deploy Directory (kubeasz workspace)
-base_dir=&amp;quot;/etc/ansible&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署k8s集群&#34;&gt;部署K8S集群&lt;/h2&gt;
-&lt;h3 id=&#34;初始化配置&#34;&gt;初始化配置&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;cd /etc/ansible
-ansible-playbook 01.prepare.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这个过程主要做三件事：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;chrony role: 集群节点时间同步[可选]
-deploy role: 创建CA证书、kubeconfig、kube-proxy.kubeconfig
-prepare role: 分发CA证书、kubectl客户端安装、环境配置
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装etcd集群&#34;&gt;安装etcd集群&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 02.etcd.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装docker&#34;&gt;安装docker&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 03.docker.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-master&#34;&gt;部署kubernetes master&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 04.kube-master.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-node&#34;&gt;部署kubernetes node&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 05.kube-node.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署kubernetes-network这里选择calico&#34;&gt;部署kubernetes network(这里选择calico)&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 06.network.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;部署ingressk8s-dashbaordcoredns&#34;&gt;部署ingress/k8s dashbaord/coredns&lt;/h3&gt;
-&lt;blockquote&gt;
-&lt;p&gt;配置ingress所用ssl证书, 这里仓库默认使用的traefik1.7.12,后边我们打算升级为2.0&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre&gt;&lt;code&gt;kubectl create secret tls traefik-cert --key=test.cn.key --cert=test.cn.pem  -n kube-system
-secret/traefik-cert created
-&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
-&lt;p&gt;部署集群扩展&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook 07.cluster-addon.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;master节点取消污点&#34;&gt;master节点取消污点&lt;/h3&gt;
-&lt;blockquote&gt;
-&lt;p&gt;默认部署完后，master节点状态是打了污点，不在调度策略如下：&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre&gt;&lt;code&gt;# kubectl  get node
-NAME            STATUS                     ROLES    AGE   VERSION
-172.16.244.14   Ready,SchedulingDisabled   master   91m   v1.16.2
-172.16.244.16   Ready,SchedulingDisabled   master   91m   v1.16.2
-172.16.244.18   Ready,SchedulingDisabled   master   91m   v1.16.2
-172.16.244.25   Ready                      node     90m   v1.16.2
-172.16.244.27   Ready                      node     90m   v1.16.2
-# kubectl  describe node  172.16.244.14 |grep Taint
-Taints:             node.kubernetes.io/unschedulable:NoSchedule
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;由于机器资源有限，所以把master也加入调度可用状态&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# kubectl patch node 172.16.244.14 -p &#39;{&amp;quot;spec&amp;quot;:{&amp;quot;unschedulable&amp;quot;:false}}&#39;
-# kubectl  get node
-NAME            STATUS   ROLES    AGE   VERSION
-172.16.244.14   Ready    master   95m   v1.16.2
-172.16.244.16   Ready    master   95m   v1.16.2
-172.16.244.18   Ready    master   95m   v1.16.2
-172.16.244.25   Ready    node     94m   v1.16.2
-172.16.244.27   Ready    node     94m   v1.16.2
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署外部负载均衡器keepalivedhaproxy&#34;&gt;部署外部负载均衡器(Keepalived+Haproxy)&lt;/h2&gt;
-&lt;pre&gt;&lt;code&gt;ansible-playbook   roles/ex-lb/ex-lb.yml
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;部署rancher&#34;&gt;部署Rancher&lt;/h2&gt;
-&lt;h3 id=&#34;安装helm3&#34;&gt;安装Helm3&lt;/h3&gt;
-&lt;p&gt;参考 &lt;a href=&#34;https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/&#34;&gt;https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/&lt;/a&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;cd /opt/soft
-wget https://get.helm.sh/helm-v3.0.1-linux-amd64.tar.gz
-tar xf helm-v3.0.1-linux-amd64.tar.gz
-cd linux-amd64/
-cp helm  /usr/local/bin/
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;创建证书&#34;&gt;创建证书&lt;/h3&gt;
-&lt;blockquote&gt;
-&lt;p&gt;因为由自己域名证书,所以这里使用k8s的secret创建的证书,当然也可以使用cert-manager工具签发rancher自己的证书或者使用letsEncrypt&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;pre&gt;&lt;code&gt;kubectl -n cattle-system create secret tls tls-rancher-ingress --cert=test.cn.pem  --key=test.cn.key
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;安装rancher&#34;&gt;安装rancher&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
-helm repo update
-helm install rancher rancher-latest/rancher \
-  --namespace cattle-system \
-  --set hostname=rancher-cicd.test.cn --set ingress.tls.source=secret
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;检查ingress资源和部署状态&#34;&gt;检查ingress、资源和部署状态&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;# kubectl  get ingress  --all-namespaces
-NAMESPACE       NAME      HOSTS                   ADDRESS   PORTS     AGE
-cattle-system   rancher   rancher-cicd.test.cn             80, 443   20h
-# kubectl -n cattle-system rollout status deploy/rancher
-Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 0 of 3 updated replicas are available...
-Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 1 of 3 updated replicas are available...
-Waiting for deployment &amp;quot;rancher&amp;quot; rollout to finish: 2 of 3 updated replicas are available...
-deployment &amp;quot;rancher&amp;quot; successfully rolled out
-# kubectl -n cattle-system get deploy rancher
-NAME      READY   UP-TO-DATE   AVAILABLE   AGE
-rancher   3/3     3            3           5m5s
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;至此，整个K8S集群已经搭建完毕，如果顺利的话，整个过程应该在10分钟左右，重要的是提前规划好集群。&lt;/p&gt;
 </description>
       
     </item>
